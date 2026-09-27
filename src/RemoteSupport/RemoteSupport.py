@@ -54,6 +54,10 @@ SHELL_RC = join(SESSION_DIR, "shellrc")
 GRAB = "/usr/bin/grab"
 GRAB_SUFFIX = "-sshx-grab-"
 IMAGE_START = b"\x1b]1337;File="  # Inline image of the iTerm2 protocol.
+BASH = "/bin/bash"
+GRAB_OPTIONS = {option: option for option in ("-o", "-v", "-d", "-n", "-l", "-b", "-p", "-q", "-s", "-h")}  # Flags of /usr/bin/grab.
+GRAB_VALUE_OPTIONS = {option: option for option in ("-i", "-r", "-j")}  # Options of /usr/bin/grab with a number.
+TERMINAL = compile(r".*/term-(\d+)")
 TERMINAL_LOG_LIMIT = 262144
 
 APPROVAL_TIMEOUT = 60  # Longer than the question on the TV, which may wait behind other notifications.
@@ -89,7 +93,7 @@ class RemoteSupportShell:
 				self.runShell()
 			else:
 				sleep(2)  # Let the supporter read the message.
-		except SystemExit:  # Closed before the approval.
+		except Terminated:  # Closed before the approval.
 			pass
 		self.logLine("--- Terminal closed ---")
 		close(self.log)
@@ -128,12 +132,12 @@ class RemoteSupportShell:
 					pass
 
 	def runShell(self):
-		shell = "/bin/bash" if access("/bin/bash", X_OK) else "/bin/sh"
+		shell = BASH if access(BASH, X_OK) else "/bin/sh"
 		environ["SHELL"] = shell
 		environ.setdefault("HOME", "/home/root")
 		self.pid, self.master = fork()
 		if self.pid == 0:  # The rc file reads the login profiles and puts our commands first in PATH.
-			if shell == "/bin/bash":
+			if shell == BASH:
 				execv(shell, [shell, "--rcfile", SHELL_RC, "-i"])
 			environ["ENV"] = SHELL_RC
 			execv(shell, [shell, "-i"])
@@ -178,7 +182,7 @@ class RemoteSupportShell:
 					if time() - self.lastActivity >= ACTIVITY_INTERVAL:
 						self.lastActivity = time()
 						touchActivity()
-		except SystemExit:
+		except Terminated:
 			pass
 		finally:
 			try:
@@ -251,7 +255,10 @@ class RemoteSupportWatcher:
 		server, sessionPart = self.link.split("/s/", 1)
 		sessionId, key = sessionPart.split("#", 1)
 		key = key.split(",", 1)[0]  # A write password would follow the key.
-		self.socket = create_connection(f"{server.replace('https://', 'wss://').replace('http://', 'ws://')}/api/s/{sessionId}", timeout=1)
+		if not server.startswith("https://"):
+			self.logLine("Unable to watch the users: the sshx server does not use HTTPS")
+			raise SystemExit(1)
+		self.socket = create_connection(f"wss://{server[len('https://'):]}/api/s/{sessionId}", timeout=1)
 		self.send({"authenticate": [encryptedZeros(key), None]})
 		self.send({"setName": argv[2] if len(argv) > 2 else gethostname()})
 		lastPing = time()
@@ -282,11 +289,10 @@ class RemoteSupportWatcher:
 				lastPing = time()
 			if isinstance(message, dict):
 				self.handle(message)
-			for uid, (name, since) in list(self.pending.items()):
-				if time() - since >= JOIN_DELAY:
-					del self.pending[uid]
-					self.announce(uid, name)
-					self.writeConnected()
+			for uid in [uid for uid, (name, since) in self.pending.items() if time() - since >= JOIN_DELAY]:
+				name = self.pending.pop(uid)[0]
+				self.announce(uid, name)
+				self.writeConnected()
 
 	def send(self, message):
 		from cbor2 import dumps
@@ -386,7 +392,7 @@ def replaceImages(data, placeholder=True):  # Returns data with a placeholder fo
 		if not ends:
 			return result + data[:start], data[start:][-4194304:]
 		end = min(ends)
-		params = dict(param.split(b"=", 1) for param in data[start + len(IMAGE_START):end].split(b":", 1)[0].split(b";") if b"=" in param)
+		params = {key: value for key, value in (param.split(b"=", 1) for param in data[start + len(IMAGE_START):end].split(b":", 1)[0].split(b";") if b"=" in param)}
 		try:
 			label = b64decode(params.get(b"name", b"")).decode("utf-8", "replace")
 		except ValueError:
@@ -411,10 +417,14 @@ def imageSize(data):
 def grabCommand(args):  # The grab command of the support shells, see the top of this file.
 	target = None
 	if args[:1] == ["--to"] and len(args) > 1:  # From the web interface, into this terminal.
-		target, args = args[1], args[2:]
+		match = TERMINAL.fullmatch(args[1])
+		if not match:
+			return
+		target, args = join(SESSION_DIR, f"term-{int(match.group(1))}"), args[2:]
 	wait = 0
 	options = []
 	passThrough = False
+	fileName = None
 	index = 0
 	while index < len(args):
 		arg = args[index]
@@ -422,20 +432,26 @@ def grabCommand(args):  # The grab command of the support shells, see the top of
 			wait = int(args[index + 1])
 			index += 2
 			continue
-		if arg in ("-i", "-r", "-j") and index + 1 < len(args):
-			options += [arg, args[index + 1]]
+		if arg in GRAB_VALUE_OPTIONS and index + 1 < len(args) and args[index + 1].isdigit():
+			options += [GRAB_VALUE_OPTIONS[arg], str(int(args[index + 1]))]
 			index += 2
 			continue
-		if arg in ("-s", "-h") or not arg.startswith("-"):
+		if arg in GRAB_OPTIONS:
+			options.append(GRAB_OPTIONS[arg])
+			passThrough = passThrough or arg in ("-s", "-h")
+		elif not arg.startswith("-") and not fileName:
+			fileName = arg
 			passThrough = True
-		options.append(arg)
+		else:
+			print(f"grab: unknown option {arg}, see grab -h")
+			return
 		index += 1
 	if passThrough and target is None:
 		if "-h" in options:
 			run([GRAB, "-h"])
 			print("\nIn the remote support session without a filename the grab is shown here and saved with the session log.\n-w (seconds) wait before grabbing")
 			return
-		execv(GRAB, [GRAB] + options)
+		execv(GRAB, [GRAB] + options + ([fileName] if fileName else []))
 	for seconds in range(wait, 0, -1):
 		stdout.write(f"\rgrab in {seconds} s ")
 		stdout.flush()
@@ -526,8 +542,12 @@ def writeAll(fd, data):
 		data = data[write(fd, data):]
 
 
+class Terminated(Exception):
+	pass
+
+
 def terminate(*args):
-	raise SystemExit(0)
+	raise Terminated
 
 
 if __name__ == "__main__":
@@ -538,4 +558,7 @@ if __name__ == "__main__":
 	elif argv[1:2] == ["watcher"]:
 		for signalNumber in (SIGHUP, SIGINT, SIGTERM):
 			signal(signalNumber, terminate)
-		RemoteSupportWatcher().run()
+		try:
+			RemoteSupportWatcher().run()
+		except Terminated:
+			pass

@@ -355,7 +355,7 @@ class SshxSession:
 		self.logEvent(f"Waiting for the approval of {', '.join(self.askedNames)}")
 		self.approvalPending = True
 		self.question = question
-		AddModalNotification(text=question, timeout=APPROVAL_QUESTION_TIMEOUT, default=False, windowTitle=_("Remote Support"), callback=self.approvalCallback)
+		AddModalNotification(text=question, timeout=APPROVAL_QUESTION_TIMEOUT, default=False, windowTitle=title(), callback=self.approvalCallback)
 		self.setState(self.state)
 
 	def approvalCallback(self, answer):
@@ -425,7 +425,7 @@ class SshxSession:
 				minutes = int(idle) // 60
 				self.logEvent(f"Nobody used the session for {minutes} minutes, asking on the receiver whether to end it")
 				fileWriteLine(CHAT_FILE, f"This support session ends in {IDLE_WARNING // 60} minutes as nobody uses it. Type in a terminal to keep it open.", source=MODULE_NAME)
-				AddModalNotification(text=_("Nobody used the remote support session for %d minutes. Do you want to end it?") % minutes, timeout=IDLE_WARNING, default=True, windowTitle=_("Remote Support"), callback=self.idleCallback)
+				AddModalNotification(text=_("Nobody used the remote support session for %d minutes. Do you want to end it?") % minutes, timeout=IDLE_WARNING, default=True, windowTitle=title(), callback=self.idleCallback)
 		elif self.idleWarned:  # Used again, the question is obsolete.
 			self.idleWarned = False
 			withdrawQuestion(self.idleCallback)
@@ -544,6 +544,10 @@ def sessionLogs():  # [(start time, last participants, path, running)], newest f
 	return logs
 
 
+def title():
+	return _("Remote Support")
+
+
 def sessionStart(reason, session=None, **kwargs):
 	if session:
 		sshxSession.adopt(session)
@@ -552,7 +556,7 @@ def sessionStart(reason, session=None, **kwargs):
 		except ImportError:
 			return
 		from .web import RemoteSupportWeb
-		addExternalChild(("remotesupport", RemoteSupportWeb(), _("Remote Support"), "1", True, "_self"))  # Shown in the content area.
+		addExternalChild(("remotesupport", RemoteSupportWeb(), title(), "1", True, "_self"))  # Shown in the content area.
 
 
 class QRCodeWidget(GUIComponent):
@@ -632,7 +636,8 @@ class RemoteSupportManager(Screen):
 
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
-		self.setTitle(_("Remote Support"))
+		self.setTitle(title())
+		actions = _("Remote Support Actions")
 		self["status"] = Label()
 		self["description"] = Label()
 		self["counts"] = Label()
@@ -649,14 +654,14 @@ class RemoteSupportManager(Screen):
 			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus, a running support session continues")),
 			"red": (self.close, _("Close the screen, a running support session continues")),
 			"blue": (self.keyBlue, _("Show the logs of previous support sessions"))
-		}, prio=0, description=_("Remote Support Actions"))
+		}, prio=0, description=actions)
 		self["sessionActions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
 			"ok": (self.keyGreen, _("Start or stop the support session")),
 			"green": (self.keyGreen, _("Start or stop the support session"))
-		}, prio=0, description=_("Remote Support Actions"))
+		}, prio=0, description=actions)
 		self["watchActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"yellow": (self.keyYellow, _("Watch the support session on the TV"))
-		}, prio=0, description=_("Remote Support Actions"))
+		}, prio=0, description=actions)
 		self.onLayoutFinish.append(self.updateState)
 		hideIndicatorWith(self)
 		sshxSession.callbacks.append(self.updateState)
@@ -776,6 +781,7 @@ class RemoteSupportLogs(Screen):
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Session Logs"))
+		actions = _("Session Log Actions")
 		self["list"] = MenuList([])
 		self["key_red"] = StaticText()
 		self["key_green"] = StaticText()
@@ -784,20 +790,20 @@ class RemoteSupportLogs(Screen):
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions"], {
 			"cancel": (self.close, _("Close the session logs")),
 			"close": (self.keyCloseRecursive, _("Close the session logs and exit all menus"))
-		}, prio=0, description=_("Session Log Actions"))
+		}, prio=0, description=actions)
 		self["showActions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
 			"ok": (self.keyShow, _("Show the selected session log")),
 			"green": (self.keyShow, _("Show the selected session log"))
-		}, prio=0, description=_("Session Log Actions"))
+		}, prio=0, description=actions)
 		self["deleteActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"red": (self.keyDelete, _("Delete the selected session log"))
-		}, prio=0, description=_("Session Log Actions"))
+		}, prio=0, description=actions)
 		self["deleteAllActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"blue": (self.keyDeleteAll, _("Delete all session logs except the one of a running session"))
-		}, prio=0, description=_("Session Log Actions"))
+		}, prio=0, description=actions)
 		self["screenshotActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"yellow": (self.keyScreenshots, _("Show the screenshots of the selected session"))
-		}, prio=0, description=_("Session Log Actions"))
+		}, prio=0, description=actions)
 		self["list"].onSelectionChanged.append(self.updateButtons)
 		self.onLayoutFinish.append(self.loadLogs)
 		hideIndicatorWith(self)
@@ -993,6 +999,8 @@ class RemoteSupportViewer(Screen):
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Support Session"))
+		actions = _("Support Session Actions")
+		closeHelp = _("Close the session view, the session continues")
 		self["header"] = Label()
 		self["connected"] = Label()
 		self["terminal"] = Label()
@@ -1007,24 +1015,24 @@ class RemoteSupportViewer(Screen):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText()
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "NavigationActions", "ColorActions"], {
-			"cancel": (self.close, _("Close the session view, the session continues")),
-			"close": (self.close, _("Close the session view, the session continues")),
-			"red": (self.close, _("Close the session view, the session continues")),
+			"cancel": (self.close, closeHelp),
+			"close": (self.close, closeHelp),
+			"red": (self.close, closeHelp),
 			"ok": (self.keyShowLarge, _("Show the selected terminal in the large view to scroll it, OK again switches back to the previous one")),
 			"up": (self.keyUp, _("Select the previous terminal or scroll back in the large view")),
 			"down": (self.keyDown, _("Select the next terminal or scroll forward in the large view")),
 			"left": (self.keyLeft, _("Move to the large view to scroll its history")),
 			"right": (self.keyRight, _("Move back to the terminal list"))
-		}, prio=0, description=_("Support Session Actions"))
+		}, prio=0, description=actions)
 		self["closeActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"green": (self.keyCloseTerminal, _("Close the terminal of the large view, the supporter loses it"))
-		}, prio=0, description=_("Support Session Actions"))
+		}, prio=0, description=actions)
 		self["automaticActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"yellow": (self.keyAutomatic, _("Automatically show the terminal with the latest activity in the large view"))
-		}, prio=0, description=_("Support Session Actions"))
+		}, prio=0, description=actions)
 		self["newActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"blue": (self.keyNewTerminal, _("Open a new terminal for the supporter"))
-		}, prio=0, description=_("Support Session Actions"))
+		}, prio=0, description=actions)
 		self.terminals = {}
 		self.pinned = None  # Terminal chosen for the large view, None follows the activity.
 		self.previous = None  # Terminal shown large before the pinned one, OK on the pinned one returns to it.
@@ -1048,9 +1056,8 @@ class RemoteSupportViewer(Screen):
 
 	def poll(self):
 		bases = {path[:-4] for path in terminalLogs()}
-		for base in list(self.terminals):
-			if base not in bases:
-				del self.terminals[base]
+		for base in self.terminals.keys() - bases:
+			del self.terminals[base]
 		for base in bases:
 			if base not in self.terminals:
 				self.terminals[base] = RemoteTerminal(base)
@@ -1227,11 +1234,11 @@ def openRemoteSupport(session, **kwargs):
 
 
 def startMenu(menuid, **kwargs):
-	return [(_("Remote Support"), openRemoteSupport, "remote_support", 85)] if menuid == "information" else []
+	return [(title(), openRemoteSupport, "remote_support", 85)] if menuid == "information" else []
 
 
 def Plugins(**kwargs):
 	return [
 		PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionStart),
-		PluginDescriptor(name=_("Remote Support"), description=_("Share a remote terminal session with a supporter."), where=PluginDescriptor.WHERE_MENU, fnc=startMenu)
+		PluginDescriptor(name=title(), description=_("Share a remote terminal session with a supporter."), where=PluginDescriptor.WHERE_MENU, fnc=startMenu)
 	]
