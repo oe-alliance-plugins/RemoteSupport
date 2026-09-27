@@ -10,7 +10,7 @@ from signal import SIGHUP, SIGINT, SIGTERM
 from socket import gethostname
 from time import strftime, strptime, time
 
-from enigma import eCanvas, eRect, eTimer, gFont, gRGB
+from enigma import eCanvas, eRect, eTimer, gFont, gRGB, getDesktop
 
 from Components.ActionMap import HelpableActionMap
 from Components.config import config
@@ -1238,7 +1238,9 @@ def startMenu(menuid, **kwargs):
 
 
 def Plugins(**kwargs):
+	description = _("Share a remote terminal session with a supporter.")
 	return [
 		PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionStart),
-		PluginDescriptor(name=title(), description=_("Share a remote terminal session with a supporter."), where=PluginDescriptor.WHERE_MENU, fnc=startMenu)
+		PluginDescriptor(name=title(), description=description, where=PluginDescriptor.WHERE_MENU, fnc=startMenu),
+		PluginDescriptor(name=title(), description=description, where=PluginDescriptor.WHERE_PLUGINMENU, icon="plugin-fhd.png" if getDesktop(0).size().width() >= 1920 else "plugin.png", fnc=openRemoteSupport)
 	]
