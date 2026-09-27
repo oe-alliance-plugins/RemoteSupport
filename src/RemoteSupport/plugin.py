@@ -10,7 +10,7 @@ from signal import SIGHUP, SIGINT, SIGTERM
 from socket import gethostname
 from time import strftime, strptime, time
 
-from enigma import eCanvas, eRect, eTimer, gFont, gRGB, getDesktop
+from enigma import RT_HALIGN_LEFT, RT_VALIGN_CENTER, RT_VALIGN_TOP, eCanvas, eListbox, eListboxPythonMultiContent, eRect, eTimer, gFont, gRGB, getDesktop
 
 from Components.ActionMap import HelpableActionMap
 from Components.config import config
@@ -18,6 +18,7 @@ from Components.Console import Console
 from Components.GUIComponent import GUIComponent
 from Components.Label import Label
 from Components.MenuList import MenuList
+from Components.MultiContent import MultiContentEntryRectangle, MultiContentEntryText
 from Components.Pixmap import MultiPixmap
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
@@ -31,6 +32,7 @@ from Screens.NetworkServices import NetworkLogScreen
 from Screens.Screen import Screen
 from Tools.Directories import SCOPE_PLUGINS, fileReadLine, fileReadLines, fileWriteLine, resolveFilename
 from Tools.Notifications import AddModalNotification, notificationCenter
+from skin import parseColor, parseFont
 from . import RemoteSupport as RemoteSupportTools, _, ngettext
 from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, BIN_DIR, CHAT_FILE, CONNECTED_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, SESSION_DIR, SHELL_RC, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE
 
@@ -46,6 +48,8 @@ INDICATOR_ACTIVITY = 3  # Seconds a terminal counts as active after its last out
 MAX_DECLINES = 3  # Without anybody approved the session is useless, so it ends after this many refusals.
 IDLE_TIMEOUT = 1800  # A session nobody types in, joins, leaves or chats in is ended after this time.
 IDLE_WARNING = 300
+FONT_WIDTH_RATIO = 0.6  # Glyph advance of the monospaced console font relative to its size.
+LINE_HEIGHT_RATIO = 1.25  # Line height of the console font relative to its size.
 # Background jobs of a non-interactive shell ignore SIGINT, but sshx needs it to close the session cleanly.
 SIGINT_RESET_LAUNCHER = "import os, signal, sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.execv(sys.argv[1], sys.argv[1:])"
 
@@ -611,6 +615,83 @@ class QRCodeWidget(GUIComponent):
 		self.show()
 
 
+def consoleFontSize(width, height, columns, lines):  # The largest monospaced font that fits the terminal into the area.
+	return max(4, min(int(height / lines / LINE_HEIGHT_RATIO), int(width / columns / FONT_WIDTH_RATIO)))
+
+
+class TerminalTiles(GUIComponent):  # The small terminals as one list, the selected one gets the backgroundColorSelected.
+	GUI_WIDGET = eListbox
+
+	def __init__(self):
+		GUIComponent.__init__(self)
+		self.l = eListboxPythonMultiContent()
+		self.headerFont = gFont("Regular", 16)
+		self.margin = 3  # Transparent around the frame, also the width of the frame.
+		self.headerColor = 0x00FFC000
+		self.textColor = 0x00FFFFFF
+		self.frameColor = 0x00606060
+		self.activeColor = 0x00FFFFFF
+		self.selectionColor = 0x00FFC000
+		self.tileColor = 0x00000000
+		self.fontSize = None
+		self.tiles = None
+
+	def applySkin(self, desktop, parent):
+		attributes = []
+		for attribute, value in self.skinAttributes or []:
+			if attribute == "headerFont":
+				self.headerFont = parseFont(value, parent.scale)
+			elif attribute == "fieldMargins":
+				self.margin = int(int(value) * parent.scale[1][0] / parent.scale[1][1])
+			elif attribute in ("headerColor", "frameColor", "activeColor", "tileColor"):
+				setattr(self, attribute, parseColor(value).argb())
+			else:
+				if attribute == "foregroundColor":
+					self.textColor = parseColor(value).argb()
+				elif attribute == "backgroundColorSelected":
+					self.selectionColor = parseColor(value).argb()
+				attributes.append((attribute, value))
+		self.skinAttributes = attributes
+		result = GUIComponent.applySkin(self, desktop, parent)
+		self.l.setFont(0, self.headerFont)
+		return result
+
+	def postWidgetCreate(self, instance):
+		instance.setContent(self.l)
+		instance.allowNativeKeys(False)  # The screen moves the selection.
+
+	def preWidgetRemove(self, instance):
+		instance.setContent(None)
+
+	def setTiles(self, tiles):  # [(header, pyte screen, shown large)]
+		size = self.l.getItemSize()
+		margin = self.margin
+		headerHeight = self.headerFont.pointSize * 5 // 4
+		width = size.width() - margin * 6
+		height = size.height() - margin * 5 - headerHeight
+		if tiles:
+			fontSize = min(consoleFontSize(width, height, screen.columns, screen.lines) for header, screen, active in tiles)
+			if fontSize != self.fontSize:
+				self.fontSize = fontSize
+				self.l.setFont(1, gFont("Console", fontSize))
+				self.tiles = None
+		tiles = [(header, "\n".join(line.rstrip() for line in screen.display), active) for header, screen, active in tiles]
+		if tiles != self.tiles:
+			self.tiles = tiles
+			self.l.setList([[
+				header,  # Entries starting with None are not selectable.
+				MultiContentEntryRectangle(pos=(margin, margin), size=(size.width() - margin * 2, size.height() - margin * 2), backgroundColor=self.activeColor if active else self.frameColor, backgroundColorSelected=self.selectionColor),
+				MultiContentEntryRectangle(pos=(margin * 2, margin * 2), size=(size.width() - margin * 4, size.height() - margin * 4), backgroundColor=self.tileColor, backgroundColorSelected=self.tileColor),
+				MultiContentEntryText(pos=(margin * 3, margin * 2), size=(width, headerHeight), font=0, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER, text=header, color=self.headerColor, color_sel=self.headerColor, backcolor=self.tileColor, backcolor_sel=self.tileColor),
+				MultiContentEntryText(pos=(margin * 3, margin * 2 + headerHeight), size=(width, height), font=1, flags=RT_HALIGN_LEFT | RT_VALIGN_TOP, text=text, color=self.textColor, color_sel=self.textColor, backcolor=self.tileColor, backcolor_sel=self.tileColor)
+			] for header, text, active in tiles])
+
+	def setSelection(self, index, enabled):
+		if self.instance:
+			self.instance.setSelectionEnable(enabled)
+			self.instance.moveSelectionTo(index)
+
+
 class RemoteSupportManager(Screen):
 	skin = """
 	<screen name="RemoteSupportManager" title="Remote Support" position="center,center" size="1100,560" resolution="1280,720">
@@ -952,27 +1033,17 @@ class RemoteTerminal:
 			self.pending = b""
 
 
-def viewerSkin(tiles):
+def viewerSkin():
 	lines = [
 		'<screen name="RemoteSupportViewer" title="Support Session" position="0,0" size="1280,720" resolution="1280,720" backgroundColor="#10000000" flags="wfNoBorder">',
-		'\t<widget source="Title" render="Label" position="20,5" size="660,35" font="Regular;28" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
-		'\t<widget name="header" position="20,42" size="540,28" font="Regular;22" foregroundColor="#00ffc000" backgroundColor="#10000000" />',
-		'\t<widget name="connected" position="570,42" size="380,28" font="Regular;22" horizontalAlignment="right" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
-		'\t<widget name="largeFocus" position="15,70" size="940,594" backgroundColor="#00ffc000" zPosition="1" />',
-		'\t<eLabel position="17,72" size="936,590" backgroundColor="#00606060" zPosition="0" />',
-		'\t<widget name="terminal" position="20,75" size="930,584" font="Console;18" noWrap="1" padding="10" backgroundColor="#00000000" zPosition="3" />',
-		'\t<widget name="moreAbove" position="975,48" size="285,20" font="Regular;16" horizontalAlignment="center" foregroundColor="#00a0a0a0" backgroundColor="#10000000" />',
-		'\t<widget name="moreBelow" position="975,645" size="285,20" font="Regular;16" horizontalAlignment="center" foregroundColor="#00a0a0a0" backgroundColor="#10000000" />',
+		'	<widget source="Title" render="Label" position="20,5" size="660,35" font="Regular;28" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
+		'	<widget name="header" position="20,42" size="540,28" font="Regular;22" foregroundColor="#00ffc000" backgroundColor="#10000000" />',
+		'	<widget name="connected" position="570,42" size="380,28" font="Regular;22" horizontalAlignment="right" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
+		'	<widget name="largeFocus" position="15,70" size="940,596" backgroundColor="#00ffc000" zPosition="1" />',
+		'	<eLabel position="17,72" size="936,592" backgroundColor="#00606060" zPosition="0" />',
+		'	<widget name="terminal" position="20,75" size="930,586" font="Console;18" noWrap="1" padding="10" backgroundColor="#00000000" zPosition="3" />',
+		'	<widget name="tiles" position="970,70" size="295,596" itemHeight="149" fieldMargins="2" headerFont="Regular;16" headerColor="#00ffc000" frameColor="#00606060" activeColor="#00ffffff" tileColor="#00000000" foregroundColor="#00ffffff" backgroundColor="#10000000" backgroundColorSelected="#00ffc000" scrollbarMode="showOnDemand" scrollbarScroll="byLine" transparent="1" />',
 	]
-	for index in range(tiles):
-		y = 75 + index * 143
-		lines += [
-			f'\t<widget name="selection{index}" position="970,{y - 5}" size="295,143" backgroundColor="#00ffc000" zPosition="0" />',
-			f'\t<widget name="active{index}" position="972,{y - 3}" size="291,139" backgroundColor="#00ffffff" zPosition="2" />',
-			f'\t<widget name="frame{index}" position="973,{y - 2}" size="289,137" backgroundColor="#00606060" zPosition="1" />',
-			f'\t<widget name="tileHeader{index}" position="975,{y}" size="285,20" font="Regular;16" foregroundColor="#00ffc000" backgroundColor="#00000000" zPosition="3" />',
-			f'\t<widget name="tile{index}" position="975,{y + 20}" size="285,113" font="Console;8" noWrap="1" padding="3" backgroundColor="#00000000" zPosition="3" />',
-		]
 	lines += [
 		colorKey("key_red", "20,e-45", 180),
 		colorKey("key_green", "210,e-45", 180),
@@ -985,11 +1056,7 @@ def viewerSkin(tiles):
 
 
 class RemoteSupportViewer(Screen):
-	TILES = 4
-	skin = viewerSkin(TILES)
-
-	FONT_WIDTH_RATIO = 0.6  # Glyph advance of the monospaced console font relative to its size.
-	LINE_HEIGHT_RATIO = 1.25  # Line height of the console font relative to its size.
+	skin = viewerSkin()
 
 	def __init__(self, session):
 		Screen.__init__(self, session, enableHelp=True)
@@ -999,12 +1066,8 @@ class RemoteSupportViewer(Screen):
 		self["header"] = Label()
 		self["connected"] = Label()
 		self["terminal"] = Label()
-		self["moreAbove"] = Label()
-		self["moreBelow"] = Label()
 		self["largeFocus"] = Label()
-		for index in range(self.TILES):
-			for name in ("selection", "active", "frame", "tileHeader", "tile"):
-				self[f"{name}{index}"] = Label()
+		self["tiles"] = TerminalTiles()
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText()
 		self["key_yellow"] = StaticText()
@@ -1034,7 +1097,6 @@ class RemoteSupportViewer(Screen):
 		self.selected = None
 		self.focusLarge = True  # The large view has the focus, UP/DOWN scroll it.
 		self.frozen = None  # Terminal kept in the large view while it is scrolled back.
-		self.offset = 0
 		self.fontSizes = {}
 		self.texts = {}
 		self.timer = eTimer()
@@ -1091,30 +1153,14 @@ class RemoteSupportViewer(Screen):
 				mode += " - " + _("scrolled back %d lines") % scrolled
 			self.setWidget("header", _("Terminal %d (%dx%d) - %s") % (order.index(large) + 1, screen.columns, screen.lines, mode))
 			self.showTerminal("terminal", self.terminals[large])
-		if self.selected in order:  # Scroll the tiles so the selection stays visible.
-			index = order.index(self.selected)
-			self.offset = min(self.offset, index)
-			self.offset = max(self.offset, index - self.TILES + 1)
-		self.offset = max(0, min(self.offset, len(order) - self.TILES))
-		for index in range(self.TILES):
-			position = self.offset + index
-			used = position < len(order)
-			base = order[position] if used else None
-			if used:
-				screen = self.terminals[base].screen
-				self.setWidget(f"tileHeader{index}", _("Terminal %d (%dx%d)") % (position + 1, screen.columns, screen.lines))
-				self.showTerminal(f"tile{index}", self.terminals[base])
-			for name in ("tileHeader", "tile", "frame"):
-				self[f"{name}{index}"].setVisible(used)
-			selection = used and base == self.selected and not self.focusLarge
-			self[f"selection{index}"].setVisible(selection)
-			self[f"active{index}"].setVisible(used and base == large and not selection)  # The focus frame covers it.
-		above = self.offset
-		below = max(0, len(order) - self.offset - self.TILES)
+		tiles = []
+		for position, base in enumerate(order):
+			screen = self.terminals[base].screen
+			tiles.append((_("Terminal %d (%dx%d)") % (position + 1, screen.columns, screen.lines), screen, base == large))
+		self["tiles"].setTiles(tiles)
+		self["tiles"].setSelection(order.index(self.selected) if self.selected in order else 0, not self.focusLarge)
 		connected = [name for uid, name, final in participants()]
 		self.setWidget("connected", _("Connected: %s") % ", ".join(connected) if connected else "")
-		self.setWidget("moreAbove", "▲ " + _("%d more") % above if above else "")
-		self.setWidget("moreBelow", "▼ " + _("%d more") % below if below else "")
 		self["largeFocus"].setVisible(self.focusLarge and large is not None)
 		self["key_green"].setText(_("Close Terminal") if large else "")
 		self["closeActions"].setEnabled(large is not None)
@@ -1135,7 +1181,7 @@ class RemoteSupportViewer(Screen):
 		padding = self[name].instance.getPadding()  # left, top, right and bottom as an eRect.
 		width = size.width() - padding.left() - padding.width()
 		height = size.height() - padding.top() - padding.height()
-		fontSize = max(4, min(int(height / screen.lines / self.LINE_HEIGHT_RATIO), int(width / screen.columns / self.FONT_WIDTH_RATIO)))
+		fontSize = consoleFontSize(width, height, screen.columns, screen.lines)
 		if self.fontSizes.get(name) != fontSize:
 			self.fontSizes[name] = fontSize
 			self[name].instance.setFont(gFont("Console", fontSize))
