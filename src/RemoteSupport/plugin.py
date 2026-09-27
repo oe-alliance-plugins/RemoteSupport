@@ -34,7 +34,7 @@ from Tools.Directories import SCOPE_PLUGINS, fileReadLine, fileReadLines, fileWr
 from Tools.Notifications import AddModalNotification, notificationCenter
 from skin import parseColor, parseFont
 from . import RemoteSupport as RemoteSupportTools, _, ngettext
-from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, BIN_DIR, CHAT_FILE, CONNECTED_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, SESSION_DIR, SHELL_RC, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE
+from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, BIN_DIR, CHAT_FILE, CONNECTED_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, SESSION_DIR, SHELL_RC, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE, WIZARD_FILE
 
 MODULE_NAME = "RemoteSupport"
 
@@ -44,6 +44,7 @@ USERS = (" Users: ", " Participants: ")  # The latter in logs of older versions.
 SESSION_ENDED = "Remote support session ended"
 STOP_TIMEOUT = 10  # sshx needs about 5 seconds to close the session on the server.
 APPROVAL_QUESTION_TIMEOUT = 30
+WIZARD_APPROVAL_WINDOW = 30  # Who is connected this long after taking over a session of the SmallBox wizard keeps the access.
 INDICATOR_ACTIVITY = 3  # Seconds a terminal counts as active after its last output.
 MAX_DECLINES = 3  # Without anybody approved the session is useless, so it ends after this many refusals.
 IDLE_TIMEOUT = 1800  # A session nobody types in, joins, leaves or chats in is ended after this time.
@@ -73,7 +74,7 @@ def sshxBinary():
 	return which("sshx") or ("/usr/bin/sshx" if exists("/usr/bin/sshx") else None)
 
 
-def incomplete():  # The plugin package depends on sshx and these modules, somebody may have removed one anyway.
+def modulesInstalled():  # The watcher needs them, also for a session of the SmallBox wizard with sshx in RAM.
 	def installed(module):
 		try:
 			return find_spec(module) is not None
@@ -81,7 +82,11 @@ def incomplete():  # The plugin package depends on sshx and these modules, someb
 			return False
 
 	invalidate_caches()
-	return not sshxBinary() or not all(installed(module) for module in REQUIRED_MODULES)
+	return all(installed(module) for module in REQUIRED_MODULES)
+
+
+def incomplete():  # The plugin package depends on sshx and these modules, somebody may have removed one anyway.
+	return not sshxBinary() or not modulesInstalled()
 
 
 def runningPid(pidFile, name):
@@ -175,6 +180,7 @@ class SshxSession:
 		self.declinedUids = set()  # Not approved before anybody was, asked again on a new terminal.
 		self.declinedRequests = set()
 		self.declines = 0
+		self.wizardApproved = 0
 		self.idleWarned = False
 		self.indicator = None
 		self.ownScreens = set()
@@ -195,12 +201,25 @@ class SshxSession:
 	def sshxPid(self):
 		return runningPid(SSHX_PID_FILE, "sshx")
 
-	def adopt(self, session):  # Takes over a session that survived a restart of enigma2.
+	def adopt(self, session):  # Takes over a session that survived a restart of enigma2 or was started before, e.g. by the SmallBox wizard.
 		self.session = session
 		if self.sshxPid():
 			self.logPath = fileReadLine(LOG_PATH_FILE, default="", source=MODULE_NAME) or None
 			self.url = fileReadLine(LINK_FILE, default="", source=MODULE_NAME) or None
-			self.logEvent("Session taken over after a restart of the GUI")
+			if not self.logPath:
+				self.logPath = self.newLogPath()
+				fileWriteLine(LOG_PATH_FILE, self.logPath, source=MODULE_NAME)
+			if exists(WIZARD_FILE):
+				if fileReadLine(WIZARD_FILE, default="", source=MODULE_NAME) == "approved":
+					self.wizardApproved = time()
+				remove(WIZARD_FILE)
+				self.logEvent("Session taken over from the SmallBox wizard")
+			else:
+				self.logEvent("Session taken over after a restart of the GUI")
+			try:  # New terminals wait for the approval of the participants in enigma2.
+				self.prepareShell()
+			except OSError as err:
+				print(f"[{MODULE_NAME}] Error {err.errno}: Unable to prepare the support shell!  ({err.strerror})")
 			if not exists(ACTIVITY_FILE):
 				RemoteSupportTools.touchActivity()
 			self.setState(self.STATE_RUNNING if self.url else self.STATE_STARTING)
@@ -219,20 +238,10 @@ class SshxSession:
 		binary = sshxBinary()
 		self.killStale()
 		rmtree(SESSION_DIR, ignore_errors=True)
-		logDir = config.crash.debug_path.value
-		self.logPath = join(logDir, f"{strftime('%Y%m%d_%H%M%S')}{SESSION_LOG_SUFFIX}")
+		self.logPath = self.newLogPath()
 		try:
 			makedirs(SESSION_DIR, mode=0o700, exist_ok=True)
-			makedirs(logDir, mode=0o755, exist_ok=True)
-			with open(SHELL_WRAPPER, "w") as fd:
-				fd.write(SHELL_STUB % quote(RemoteSupportTools.__file__))
-			chmod(SHELL_WRAPPER, 0o700)
-			makedirs(BIN_DIR, mode=0o700, exist_ok=True)
-			with open(join(BIN_DIR, "grab"), "w") as fd:
-				fd.write(GRAB_STUB % quote(RemoteSupportTools.__file__))
-			chmod(join(BIN_DIR, "grab"), 0o700)
-			with open(SHELL_RC, "w") as fd:
-				fd.write(SHELL_RC_TEMPLATE % BIN_DIR)
+			self.prepareShell()
 		except OSError as err:
 			print(f"[{MODULE_NAME}] Error {err.errno}: Unable to prepare the support session!  ({err.strerror})")
 			self.setState(self.STATE_ERROR, err.strerror)
@@ -247,6 +256,22 @@ class SshxSession:
 		startDetached(f"cd {quote(home)} && exec /usr/bin/python3 -c {quote(SIGINT_RESET_LAUNCHER)} {quote(binary)} --quiet --shell {quote(SHELL_WRAPPER)} --name {quote(name)}", SSHX_PID_FILE, SSHX_OUTPUT_FILE, SSHX_ERROR_FILE)
 		self.startTime = time()
 		self.monitorTimer.start(500)
+
+	def newLogPath(self):
+		logDir = config.crash.debug_path.value
+		makedirs(logDir, mode=0o755, exist_ok=True)
+		return join(logDir, f"{strftime('%Y%m%d_%H%M%S')}{SESSION_LOG_SUFFIX}")
+
+	def prepareShell(self):  # The shell sshx starts for every terminal and the commands of the support shells.
+		with open(SHELL_WRAPPER, "w") as fd:
+			fd.write(SHELL_STUB % quote(RemoteSupportTools.__file__))
+		chmod(SHELL_WRAPPER, 0o700)
+		makedirs(BIN_DIR, mode=0o700, exist_ok=True)
+		with open(join(BIN_DIR, "grab"), "w") as fd:
+			fd.write(GRAB_STUB % quote(RemoteSupportTools.__file__))
+		chmod(join(BIN_DIR, "grab"), 0o700)
+		with open(SHELL_RC, "w") as fd:
+			fd.write(SHELL_RC_TEMPLATE % BIN_DIR)
 
 	def stop(self, reason="Session stopped by the user"):
 		if self.state in (self.STATE_STARTING, self.STATE_RUNNING):
@@ -303,6 +328,7 @@ class SshxSession:
 		self.declinedUids = set()
 		self.declinedRequests = set()
 		self.declines = 0
+		self.wizardApproved = 0
 		self.idleWarned = False
 		if error:
 			self.setState(self.STATE_ERROR, errors[-1] if errors else reason)
@@ -317,7 +343,7 @@ class SshxSession:
 				signalPid(pid, SIGTERM)
 
 	def startWatcher(self):
-		if incomplete() or runningPid(WATCHER_PID_FILE, "RemoteSupport"):
+		if not modulesInstalled() or runningPid(WATCHER_PID_FILE, "RemoteSupport"):
 			return
 		name = f"{gethostname()} ({BoxInfo.getItem('imageversion')})"  # The image version helps the supporter.
 		startDetached(f"exec /usr/bin/python3 {quote(RemoteSupportTools.__file__)} watcher {quote(name)}", WATCHER_PID_FILE, WATCHER_OUTPUT_FILE)
@@ -328,6 +354,14 @@ class SshxSession:
 			signalPid(pid, SIGTERM)
 
 	def checkParticipants(self):  # Everybody who joins has to be approved, meanwhile the session is read-only.
+		if self.wizardApproved:  # The terminals were approved in the wizard, the participants there keep the access.
+			connected = participants()
+			if connected or time() - self.wizardApproved > WIZARD_APPROVAL_WINDOW:
+				self.wizardApproved = 0
+				if connected:
+					with open(APPROVED_FILE, "w") as fd:
+						fd.write("".join(f"{uid}\n" for uid, name, final in connected))
+					self.logEvent(f"Access for {', '.join(name for uid, name, final in connected)} approved in the SmallBox wizard")
 		approvedUids = self.approvedUids()
 		waiting = [(uid, name, final) for uid, name, final in participants() if uid not in approvedUids]
 		if waiting and not exists(LOCK_FILE):

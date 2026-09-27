@@ -33,7 +33,7 @@ from termios import TCSAFLUSH, TIOCGWINSZ, TIOCSWINSZ, tcgetattr, tcsetattr
 from time import sleep, strftime, time
 from tty import setraw
 
-SESSION_DIR = "/tmp/sshx-e2"
+SESSION_DIR = "/tmp/remotesupport"
 SHELL_WRAPPER = join(SESSION_DIR, "shell")
 SSHX_PID_FILE = join(SESSION_DIR, "sshx.pid")
 SSHX_OUTPUT_FILE = join(SESSION_DIR, "sshx.out")
@@ -44,6 +44,7 @@ LOG_PATH_FILE = join(SESSION_DIR, "logpath")
 APPROVED_FILE = join(SESSION_DIR, "approved")  # The uids of the approved participants.
 LOCK_FILE = join(SESSION_DIR, "locked")  # Somebody waits for the approval, the session is read-only.
 LINK_FILE = join(SESSION_DIR, "link")
+WIZARD_FILE = join(SESSION_DIR, "wizard")  # The SmallBox wizard handed the session over, "approved" if it approved terminals.
 CONNECTED_FILE = join(SESSION_DIR, "connected")  # uid, name and whether the name is final, per participant.
 ACTIVITY_FILE = join(SESSION_DIR, "activity")
 CHAT_FILE = join(SESSION_DIR, "chat")  # A message enigma2 wants to send to the participants.
