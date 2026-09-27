@@ -10,7 +10,7 @@
   "package_name": "enigma2-plugin-systemplugins-remotesupport",
   "plugin_src_rel": "RemoteSupport",
   "python_package": "RemoteSupport",
-  "rdepends_recipe": "",
+  "rdepends_recipe": "sshx python3-cbor2 python3-cryptography python3-pyte python3-qrcode python3-websocket-client",
   "replaces": "",
   "repo_name": "RemoteSupport",
   "rrecommends": "",

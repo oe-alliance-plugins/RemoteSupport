@@ -1,0 +1,482 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the RemoteSupport package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: RemoteSupport\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 14:31+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: ../plugin.py:1114 ../plugin.py:1115
+#, python-format
+msgid "%d more"
+msgstr ""
+
+#: ../plugin.py:813
+#, python-format
+msgid "%d screenshot"
+msgid_plural "%d screenshots"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ../plugin.py:682
+#, python-format
+msgid "%d terminal open"
+msgid_plural "%d terminals open"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ../plugin.py:679
+#, python-format
+msgid "%d user connected"
+msgid_plural "%d users connected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ../plugin.py:348
+#, python-format
+msgid "'%s' joined the support session."
+msgstr ""
+
+#: ../plugin.py:691 ../web.py:457
+msgid "A package the plugin needs is missing (sshx or a Python module). Please reinstall the Remote Support plugin."
+msgstr ""
+
+#: ../plugin.py:733 ../web.py:488
+msgid "After you approved the access on the TV, the supporter has full root access to your receiver as long as the session is running. Only share the link with people you trust!"
+msgstr ""
+
+#: ../web.py:454
+msgid "Allow"
+msgstr ""
+
+#: ../plugin.py:700
+msgid "Approved users can open terminals. Everybody who joins later has to be approved as well."
+msgstr ""
+
+#: ../plugin.py:1119
+msgid "Automatic"
+msgstr ""
+
+#: ../plugin.py:1023
+msgid "Automatically show the terminal with the latest activity in the large view"
+msgstr ""
+
+#: ../plugin.py:643 ../plugin.py:1005
+msgid "Close"
+msgstr ""
+
+#: ../plugin.py:1117
+msgid "Close Terminal"
+msgstr ""
+
+#: ../plugin.py:649
+msgid "Close the screen and exit all menus, a running support session continues"
+msgstr ""
+
+#: ../plugin.py:648 ../plugin.py:650
+msgid "Close the screen, a running support session continues"
+msgstr ""
+
+#: ../plugin.py:785
+msgid "Close the session logs"
+msgstr ""
+
+#: ../plugin.py:786
+msgid "Close the session logs and exit all menus"
+msgstr ""
+
+#: ../plugin.py:1010 ../plugin.py:1011 ../plugin.py:1012
+msgid "Close the session view, the session continues"
+msgstr ""
+
+#: ../plugin.py:1020
+msgid "Close the terminal of the large view, the supporter loses it"
+msgstr ""
+
+#: ../web.py:461
+msgid "Connected"
+msgstr ""
+
+#: ../plugin.py:1113
+#, python-format
+msgid "Connected: %s"
+msgstr ""
+
+#: ../plugin.py:695
+msgid "Connecting to the sshx server, please wait."
+msgstr ""
+
+#: ../plugin.py:829 ../web.py:481
+msgid "Delete"
+msgstr ""
+
+#: ../plugin.py:831 ../web.py:482
+msgid "Delete All"
+msgstr ""
+
+#: ../plugin.py:796
+msgid "Delete all session logs except the one of a running session"
+msgstr ""
+
+#: ../plugin.py:793
+msgid "Delete the selected session log"
+msgstr ""
+
+#: ../web.py:455
+msgid "Deny"
+msgstr ""
+
+#: ../plugin.py:721 ../web.py:460
+msgid "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."
+msgstr ""
+
+#: ../plugin.py:868
+#, python-format
+msgid "Do you really want to delete all %d session logs?"
+msgstr ""
+
+#: ../web.py:486
+msgid "Do you really want to delete all session logs and their screenshots? The log of a running session is kept."
+msgstr ""
+
+#: ../plugin.py:860 ../web.py:485
+#, python-format
+msgid "Do you really want to delete the session log '%s' and its %d screenshots?"
+msgstr ""
+
+#: ../plugin.py:858 ../web.py:484
+#, python-format
+msgid "Do you really want to delete the session log '%s' and its screenshot?"
+msgstr ""
+
+#: ../plugin.py:862 ../web.py:483
+#, python-format
+msgid "Do you really want to delete the session log '%s'?"
+msgstr ""
+
+#: ../plugin.py:735 ../web.py:490
+msgid "Do you really want to end the support session?"
+msgstr ""
+
+#: ../plugin.py:354
+msgid "Do you want to allow the access? Then the supporter can open terminals on this receiver."
+msgstr ""
+
+#: ../plugin.py:1201
+#, python-format
+msgid "Do you want to close terminal %d? The supporter loses it together with everything running in it."
+msgstr ""
+
+#: ../plugin.py:737 ../web.py:489
+msgid "Do you want to start a support session?"
+msgstr ""
+
+#: ../web.py:472
+msgid "Download"
+msgstr ""
+
+#: ../web.py:476
+msgid "Full window"
+msgstr ""
+
+#: ../web.py:478
+msgid "Grab ALL"
+msgstr ""
+
+#: ../web.py:479
+msgid "Grab OSD"
+msgstr ""
+
+#: ../plugin.py:716 ../web.py:458
+msgid "Last error:"
+msgstr ""
+
+#: ../web.py:459
+msgid "Link for your supporter"
+msgstr ""
+
+#: ../plugin.py:1017
+msgid "Move back to the terminal list"
+msgstr ""
+
+#: ../plugin.py:1016
+msgid "Move to the large view to scroll its history"
+msgstr ""
+
+#: ../plugin.py:1122
+msgid "New Terminal"
+msgstr ""
+
+#: ../plugin.py:350
+#, python-format
+msgid "New in the support session: %s"
+msgstr ""
+
+#: ../web.py:471
+msgid "No session logs"
+msgstr ""
+
+#: ../plugin.py:713 ../web.py:444 ../web.py:445
+msgid "No support session active"
+msgstr ""
+
+#: ../web.py:462
+msgid "Nobody"
+msgstr ""
+
+#: ../plugin.py:428
+#, python-format
+msgid "Nobody used the remote support session for %d minutes. Do you want to end it?"
+msgstr ""
+
+#: ../web.py:463
+#, python-format
+msgid "Nobody uses the session, it ends in %d minutes."
+msgstr ""
+
+#: ../web.py:477
+msgid "Normal size"
+msgstr ""
+
+#: ../plugin.py:1026
+msgid "Open a new terminal for the supporter"
+msgstr ""
+
+#: ../plugin.py:404
+msgid "Open a terminal first, the screenshot is shown there."
+msgstr ""
+
+#: ../web.py:467
+msgid "Open the session"
+msgstr ""
+
+#: ../web.py:469
+msgid "Open the session in its own tab, the new user has to be approved as well."
+msgstr ""
+
+#: ../plugin.py:714
+msgid "Press GREEN to start a support session. You will get a link and a QR code for your supporter, who then gets a terminal on this receiver in their web browser."
+msgstr ""
+
+#: ../plugin.py:358 ../plugin.py:428 ../plugin.py:555 ../plugin.py:635
+#: ../plugin.py:1230 ../plugin.py:1236 ../web.py:442
+msgid "Remote Support"
+msgstr ""
+
+#: ../plugin.py:652 ../plugin.py:656 ../plugin.py:659
+msgid "Remote Support Actions"
+msgstr ""
+
+#: ../plugin.py:690 ../web.py:451
+msgid "Remote support is not available"
+msgstr ""
+
+#: ../plugin.py:722
+msgid "Scan to open the support session"
+msgstr ""
+
+#: ../web.py:475
+msgid "Screenshot"
+msgstr ""
+
+#: ../plugin.py:834
+msgid "Screenshots"
+msgstr ""
+
+#: ../plugin.py:1015
+msgid "Select the next terminal or scroll forward in the large view"
+msgstr ""
+
+#: ../plugin.py:1014
+msgid "Select the previous terminal or scroll back in the large view"
+msgstr ""
+
+#: ../plugin.py:706
+msgid "Send the link below to your supporter or let them scan the QR code."
+msgstr ""
+
+#: ../plugin.py:843
+msgid "Session Log"
+msgstr ""
+
+#: ../plugin.py:787 ../plugin.py:791 ../plugin.py:794 ../plugin.py:797
+#: ../plugin.py:800
+msgid "Session Log Actions"
+msgstr ""
+
+#: ../plugin.py:646 ../plugin.py:778
+msgid "Session Logs"
+msgstr ""
+
+#: ../web.py:474
+msgid "Session log"
+msgstr ""
+
+#: ../web.py:470
+msgid "Session logs"
+msgstr ""
+
+#: ../plugin.py:1236
+msgid "Share a remote terminal session with a supporter."
+msgstr ""
+
+#: ../plugin.py:827 ../web.py:473
+msgid "Show"
+msgstr ""
+
+#: ../plugin.py:651
+msgid "Show the logs of previous support sessions"
+msgstr ""
+
+#: ../plugin.py:799
+msgid "Show the screenshots of the selected session"
+msgstr ""
+
+#: ../plugin.py:789 ../plugin.py:790
+msgid "Show the selected session log"
+msgstr ""
+
+#: ../plugin.py:1013
+msgid "Show the selected terminal in the large view to scroll it, OK again switches back to the previous one"
+msgstr ""
+
+#: ../plugin.py:717 ../web.py:452
+msgid "Start"
+msgstr ""
+
+#: ../web.py:456
+msgid "Start a support session to get a link for your supporter, who then gets a terminal on this receiver in their web browser. The session is the same as in the Remote Support screen on the TV, you can watch and use it here."
+msgstr ""
+
+#: ../plugin.py:654 ../plugin.py:655
+msgid "Start or stop the support session"
+msgstr ""
+
+#: ../plugin.py:694 ../web.py:446
+msgid "Starting support session..."
+msgstr ""
+
+#: ../plugin.py:696 ../plugin.py:707 ../web.py:453
+msgid "Stop"
+msgstr ""
+
+#: ../plugin.py:709 ../web.py:448
+msgid "Stopping support session..."
+msgstr ""
+
+#: ../plugin.py:995
+msgid "Support Session"
+msgstr ""
+
+#: ../plugin.py:1018 ../plugin.py:1021 ../plugin.py:1024 ../plugin.py:1027
+msgid "Support Session Actions"
+msgstr ""
+
+#: ../plugin.py:702 ../web.py:447
+msgid "Support session is running"
+msgstr ""
+
+#: ../plugin.py:699
+msgid "Support session is running, access approved"
+msgstr ""
+
+#: ../plugin.py:1103
+#, python-format
+msgid "Terminal %d (%dx%d)"
+msgstr ""
+
+#: ../plugin.py:1090
+#, python-format
+msgid "Terminal %d (%dx%d) - %s"
+msgstr ""
+
+#: ../web.py:465
+msgid "The receiver does not answer."
+msgstr ""
+
+#: ../web.py:480
+msgid "The screenshot is shown in the terminal used last."
+msgstr ""
+
+#: ../web.py:466
+msgid "The session can only be shown here when OpenWebif is opened with HTTPS."
+msgstr ""
+
+#: ../plugin.py:704
+msgid "The session keeps running when you close this screen. Press YELLOW to watch what the supporter is doing and GREEN to end the session."
+msgstr ""
+
+#: ../plugin.py:399
+msgid "The supporter took a screenshot."
+msgstr ""
+
+#: ../web.py:468
+msgid "The terminal stays blank?"
+msgstr ""
+
+#: ../plugin.py:872
+#, python-format
+msgid "Their %d screenshots are deleted as well."
+msgstr ""
+
+#: ../plugin.py:870
+msgid "Their screenshot is deleted as well."
+msgstr ""
+
+#: ../plugin.py:352
+msgid "Until you answer, nobody can type in the terminals. Do you want to allow the access? If not, the session is ended for everybody."
+msgstr ""
+
+#: ../plugin.py:1082
+msgid "Waiting for the supporter to open a terminal..."
+msgstr ""
+
+#: ../plugin.py:726
+msgid "Watch Session"
+msgstr ""
+
+#: ../plugin.py:658
+msgid "Watch the support session on the TV"
+msgstr ""
+
+#: ../plugin.py:705
+#, python-format
+msgid "When nobody uses it for %d minutes, you are asked whether to end it."
+msgstr ""
+
+#: ../plugin.py:703
+msgid "When somebody joins the session, you have to approve the access with the remote control or in OpenWebif."
+msgstr ""
+
+#: ../web.py:450
+msgid "access approved"
+msgstr ""
+
+#: ../plugin.py:1086
+msgid "automatic"
+msgstr ""
+
+#: ../plugin.py:1086
+msgid "pinned"
+msgstr ""
+
+#: ../plugin.py:814 ../web.py:487
+msgid "running"
+msgstr ""
+
+#: ../plugin.py:1089
+#, python-format
+msgid "scrolled back %d lines"
+msgstr ""

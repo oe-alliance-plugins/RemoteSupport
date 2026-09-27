@@ -1,0 +1,479 @@
+# German translations for RemoteSupport package.
+# Copyright (C) 2026 THE RemoteSupport'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the RemoteSupport package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: RemoteSupport\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-27 14:31+0200\n"
+"PO-Revision-Date: 2026-09-27 14:31+0200\n"
+"Last-Translator: WXbet\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../plugin.py:1114 ../plugin.py:1115
+#, python-format
+msgid "%d more"
+msgstr "%d weitere"
+
+#: ../plugin.py:813
+#, python-format
+msgid "%d screenshot"
+msgid_plural "%d screenshots"
+msgstr[0] "%d Screenshot"
+msgstr[1] "%d Screenshots"
+
+#: ../plugin.py:682
+#, python-format
+msgid "%d terminal open"
+msgid_plural "%d terminals open"
+msgstr[0] "%d Terminal offen"
+msgstr[1] "%d Terminals offen"
+
+#: ../plugin.py:679
+#, python-format
+msgid "%d user connected"
+msgid_plural "%d users connected"
+msgstr[0] "%d Benutzer verbunden"
+msgstr[1] "%d Benutzer verbunden"
+
+#: ../plugin.py:348
+#, python-format
+msgid "'%s' joined the support session."
+msgstr "'%s' ist der Support-Session beigetreten."
+
+#: ../plugin.py:691 ../web.py:457
+msgid "A package the plugin needs is missing (sshx or a Python module). Please reinstall the Remote Support plugin."
+msgstr "Ein Paket, das das Plugin braucht, fehlt (sshx oder ein Python-Modul). Bitte das Remote-Support-Plugin neu installieren."
+
+#: ../plugin.py:733 ../web.py:488
+msgid "After you approved the access on the TV, the supporter has full root access to your receiver as long as the session is running. Only share the link with people you trust!"
+msgstr "Nach deiner Freigabe am TV hat der Supporter vollen root-Zugriff auf deinen Receiver, solange die Session läuft. Gib den Link nur an Personen weiter, denen du vertraust!"
+
+#: ../web.py:454
+msgid "Allow"
+msgstr "Erlauben"
+
+#: ../plugin.py:700
+msgid "Approved users can open terminals. Everybody who joins later has to be approved as well."
+msgstr "Freigegebene Benutzer können Terminals öffnen. Wer später beitritt, muss ebenfalls freigegeben werden."
+
+#: ../plugin.py:1119
+msgid "Automatic"
+msgstr "Automatisch"
+
+#: ../plugin.py:1023
+msgid "Automatically show the terminal with the latest activity in the large view"
+msgstr "Das Terminal mit der letzten Aktivität automatisch groß anzeigen"
+
+#: ../plugin.py:643 ../plugin.py:1005
+msgid "Close"
+msgstr "Schließen"
+
+#: ../plugin.py:1117
+msgid "Close Terminal"
+msgstr "Terminal schließen"
+
+#: ../plugin.py:649
+msgid "Close the screen and exit all menus, a running support session continues"
+msgstr "Screen schließen und alle Menüs verlassen, eine laufende Support-Session läuft weiter"
+
+#: ../plugin.py:648 ../plugin.py:650
+msgid "Close the screen, a running support session continues"
+msgstr "Screen schließen, eine laufende Support-Session läuft weiter"
+
+#: ../plugin.py:785
+msgid "Close the session logs"
+msgstr "Session-Logs schließen"
+
+#: ../plugin.py:786
+msgid "Close the session logs and exit all menus"
+msgstr "Session-Logs schließen und alle Menüs verlassen"
+
+#: ../plugin.py:1010 ../plugin.py:1011 ../plugin.py:1012
+msgid "Close the session view, the session continues"
+msgstr "Session-Ansicht schließen, die Session läuft weiter"
+
+#: ../plugin.py:1020
+msgid "Close the terminal of the large view, the supporter loses it"
+msgstr "Das groß angezeigte Terminal schließen, der Supporter verliert es"
+
+#: ../web.py:461
+msgid "Connected"
+msgstr "Verbunden"
+
+#: ../plugin.py:1113
+#, python-format
+msgid "Connected: %s"
+msgstr "Verbunden: %s"
+
+#: ../plugin.py:695
+msgid "Connecting to the sshx server, please wait."
+msgstr "Verbindung zum sshx-Server wird aufgebaut, bitte warten."
+
+#: ../plugin.py:829 ../web.py:481
+msgid "Delete"
+msgstr "Löschen"
+
+#: ../plugin.py:831 ../web.py:482
+msgid "Delete All"
+msgstr "Alle löschen"
+
+#: ../plugin.py:796
+msgid "Delete all session logs except the one of a running session"
+msgstr "Alle Session-Logs löschen, außer dem einer laufenden Session"
+
+#: ../plugin.py:793
+msgid "Delete the selected session log"
+msgstr "Das gewählte Session-Log löschen"
+
+#: ../web.py:455
+msgid "Deny"
+msgstr "Ablehnen"
+
+#: ../plugin.py:721 ../web.py:460
+msgid "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."
+msgstr "Poste den Link oder einen Screenshot davon nicht in öffentlichen Foren: Jeder, der den Link kennt, kann versuchen dieser Session beizutreten."
+
+#: ../plugin.py:868
+#, python-format
+msgid "Do you really want to delete all %d session logs?"
+msgstr "Willst du wirklich alle %d Session-Logs löschen?"
+
+#: ../web.py:486
+msgid "Do you really want to delete all session logs and their screenshots? The log of a running session is kept."
+msgstr "Willst du wirklich alle Session-Logs und ihre Screenshots löschen? Das Log einer laufenden Session bleibt erhalten."
+
+#: ../plugin.py:860 ../web.py:485
+#, python-format
+msgid "Do you really want to delete the session log '%s' and its %d screenshots?"
+msgstr "Willst du das Session-Log '%s' und seine %d Screenshots wirklich löschen?"
+
+#: ../plugin.py:858 ../web.py:484
+#, python-format
+msgid "Do you really want to delete the session log '%s' and its screenshot?"
+msgstr "Willst du das Session-Log '%s' und seinen Screenshot wirklich löschen?"
+
+#: ../plugin.py:862 ../web.py:483
+#, python-format
+msgid "Do you really want to delete the session log '%s'?"
+msgstr "Willst du das Session-Log '%s' wirklich löschen?"
+
+#: ../plugin.py:735 ../web.py:490
+msgid "Do you really want to end the support session?"
+msgstr "Willst du die Support-Session wirklich beenden?"
+
+#: ../plugin.py:354
+msgid "Do you want to allow the access? Then the supporter can open terminals on this receiver."
+msgstr "Willst du den Zugriff erlauben? Dann kann der Supporter Terminals auf diesem Receiver öffnen."
+
+#: ../plugin.py:1201
+#, python-format
+msgid "Do you want to close terminal %d? The supporter loses it together with everything running in it."
+msgstr "Willst du Terminal %d schließen? Der Supporter verliert es samt allem, was darin läuft."
+
+#: ../plugin.py:737 ../web.py:489
+msgid "Do you want to start a support session?"
+msgstr "Willst du eine Support-Session starten?"
+
+#: ../web.py:472
+msgid "Download"
+msgstr "Herunterladen"
+
+#: ../web.py:476
+msgid "Full window"
+msgstr "Ganzes Fenster"
+
+#: ../web.py:478
+msgid "Grab ALL"
+msgstr "Grab ALL"
+
+#: ../web.py:479
+msgid "Grab OSD"
+msgstr "Grab OSD"
+
+#: ../plugin.py:716 ../web.py:458
+msgid "Last error:"
+msgstr "Letzter Fehler:"
+
+#: ../web.py:459
+msgid "Link for your supporter"
+msgstr "Link für deinen Supporter"
+
+#: ../plugin.py:1017
+msgid "Move back to the terminal list"
+msgstr "Zurück zur Terminal-Liste"
+
+#: ../plugin.py:1016
+msgid "Move to the large view to scroll its history"
+msgstr "In die große Ansicht wechseln, um im Verlauf zu blättern"
+
+#: ../plugin.py:1122
+msgid "New Terminal"
+msgstr "Neues Terminal"
+
+#: ../plugin.py:350
+#, python-format
+msgid "New in the support session: %s"
+msgstr "Neu in der Support-Session: %s"
+
+#: ../web.py:471
+msgid "No session logs"
+msgstr "Keine Session-Logs"
+
+#: ../plugin.py:713 ../web.py:444 ../web.py:445
+msgid "No support session active"
+msgstr "Keine Support-Session aktiv"
+
+#: ../web.py:462
+msgid "Nobody"
+msgstr "Niemand"
+
+#: ../plugin.py:428
+#, python-format
+msgid "Nobody used the remote support session for %d minutes. Do you want to end it?"
+msgstr "Die Remote-Support-Session wurde %d Minuten lang nicht benutzt. Willst du sie beenden?"
+
+#: ../web.py:463
+#, python-format
+msgid "Nobody uses the session, it ends in %d minutes."
+msgstr "Niemand nutzt die Session, sie endet in %d Minuten."
+
+#: ../web.py:477
+msgid "Normal size"
+msgstr "Normale Größe"
+
+#: ../plugin.py:1026
+msgid "Open a new terminal for the supporter"
+msgstr "Ein neues Terminal für den Supporter öffnen"
+
+#: ../plugin.py:404
+msgid "Open a terminal first, the screenshot is shown there."
+msgstr "Öffne zuerst ein Terminal, der Screenshot wird dort angezeigt."
+
+#: ../web.py:467
+msgid "Open the session"
+msgstr "Session öffnen"
+
+#: ../web.py:469
+msgid "Open the session in its own tab, the new user has to be approved as well."
+msgstr "Session in einem eigenen Tab öffnen, der neue Benutzer muss ebenfalls freigegeben werden."
+
+#: ../plugin.py:714
+msgid "Press GREEN to start a support session. You will get a link and a QR code for your supporter, who then gets a terminal on this receiver in their web browser."
+msgstr "GRÜN startet eine Support-Session. Du bekommst einen Link und einen QR-Code für deinen Supporter, der dann im Webbrowser ein Terminal auf diesem Receiver starten kann."
+
+#: ../plugin.py:358 ../plugin.py:428 ../plugin.py:555 ../plugin.py:635 ../plugin.py:1230 ../plugin.py:1236 ../web.py:442
+msgid "Remote Support"
+msgstr "Remote Support"
+
+#: ../plugin.py:652 ../plugin.py:656 ../plugin.py:659
+msgid "Remote Support Actions"
+msgstr "Remote-Support-Aktionen"
+
+#: ../plugin.py:690 ../web.py:451
+msgid "Remote support is not available"
+msgstr "Remote Support ist nicht verfügbar"
+
+#: ../plugin.py:722
+msgid "Scan to open the support session"
+msgstr "Scannen, um die Support-Session zu öffnen"
+
+#: ../web.py:475
+msgid "Screenshot"
+msgstr "Screenshot"
+
+#: ../plugin.py:834
+msgid "Screenshots"
+msgstr "Screenshots"
+
+#: ../plugin.py:1015
+msgid "Select the next terminal or scroll forward in the large view"
+msgstr "Nächstes Terminal wählen oder in der großen Ansicht vorwärts blättern"
+
+#: ../plugin.py:1014
+msgid "Select the previous terminal or scroll back in the large view"
+msgstr "Vorheriges Terminal wählen oder in der großen Ansicht zurückblättern"
+
+#: ../plugin.py:706
+msgid "Send the link below to your supporter or let them scan the QR code."
+msgstr "Schick den Link unten an deinen Supporter oder lass ihn den QR-Code scannen."
+
+#: ../plugin.py:843
+msgid "Session Log"
+msgstr "Session-Log"
+
+#: ../plugin.py:787 ../plugin.py:791 ../plugin.py:794 ../plugin.py:797 ../plugin.py:800
+msgid "Session Log Actions"
+msgstr "Session-Log-Aktionen"
+
+#: ../plugin.py:646 ../plugin.py:778
+msgid "Session Logs"
+msgstr "Session-Logs"
+
+#: ../web.py:474
+msgid "Session log"
+msgstr "Session-Log"
+
+#: ../web.py:470
+msgid "Session logs"
+msgstr "Session-Logs"
+
+#: ../plugin.py:1236
+msgid "Share a remote terminal session with a supporter."
+msgstr "Eine Terminal-Session mit einem Supporter teilen."
+
+#: ../plugin.py:827 ../web.py:473
+msgid "Show"
+msgstr "Anzeigen"
+
+#: ../plugin.py:651
+msgid "Show the logs of previous support sessions"
+msgstr "Die Logs früherer Support-Sessions anzeigen"
+
+#: ../plugin.py:799
+msgid "Show the screenshots of the selected session"
+msgstr "Die Screenshots der gewählten Session anzeigen"
+
+#: ../plugin.py:789 ../plugin.py:790
+msgid "Show the selected session log"
+msgstr "Das gewählte Session-Log anzeigen"
+
+#: ../plugin.py:1013
+msgid "Show the selected terminal in the large view to scroll it, OK again switches back to the previous one"
+msgstr "Das gewählte Terminal groß anzeigen, um darin zu blättern, erneut OK wechselt zum vorherigen zurück"
+
+#: ../plugin.py:717 ../web.py:452
+msgid "Start"
+msgstr "Start"
+
+#: ../web.py:456
+msgid "Start a support session to get a link for your supporter, who then gets a terminal on this receiver in their web browser. The session is the same as in the Remote Support screen on the TV, you can watch and use it here."
+msgstr "Starte eine Support-Session, um einen Link für deinen Supporter zu bekommen, der dann im Webbrowser ein Terminal auf diesem Receiver starten kann. Es ist dieselbe Session wie im Remote-Support-Screen am TV, du kannst hier zuschauen und mitarbeiten."
+
+#: ../plugin.py:654 ../plugin.py:655
+msgid "Start or stop the support session"
+msgstr "Die Support-Session starten oder beenden"
+
+#: ../plugin.py:694 ../web.py:446
+msgid "Starting support session..."
+msgstr "Support-Session wird gestartet..."
+
+#: ../plugin.py:696 ../plugin.py:707 ../web.py:453
+msgid "Stop"
+msgstr "Stopp"
+
+#: ../plugin.py:709 ../web.py:448
+msgid "Stopping support session..."
+msgstr "Support-Session wird beendet..."
+
+#: ../plugin.py:995
+msgid "Support Session"
+msgstr "Support-Session"
+
+#: ../plugin.py:1018 ../plugin.py:1021 ../plugin.py:1024 ../plugin.py:1027
+msgid "Support Session Actions"
+msgstr "Support-Session-Aktionen"
+
+#: ../plugin.py:702 ../web.py:447
+msgid "Support session is running"
+msgstr "Support-Session läuft"
+
+#: ../plugin.py:699
+msgid "Support session is running, access approved"
+msgstr "Support-Session läuft, Zugriff freigegeben"
+
+#: ../plugin.py:1103
+#, python-format
+msgid "Terminal %d (%dx%d)"
+msgstr "Terminal %d (%dx%d)"
+
+#: ../plugin.py:1090
+#, python-format
+msgid "Terminal %d (%dx%d) - %s"
+msgstr "Terminal %d (%dx%d) - %s"
+
+#: ../web.py:465
+msgid "The receiver does not answer."
+msgstr "Der Receiver antwortet nicht."
+
+#: ../web.py:480
+msgid "The screenshot is shown in the terminal used last."
+msgstr "Der Screenshot erscheint im zuletzt benutzten Terminal."
+
+#: ../web.py:466
+msgid "The session can only be shown here when OpenWebif is opened with HTTPS."
+msgstr "Die Session kann hier nur angezeigt werden, wenn OpenWebif über HTTPS geöffnet ist."
+
+#: ../plugin.py:704
+msgid "The session keeps running when you close this screen. Press YELLOW to watch what the supporter is doing and GREEN to end the session."
+msgstr "Die Session läuft weiter, wenn du diesen Screen schließt. GELB zeigt, was der Supporter macht, GRÜN beendet die Session."
+
+#: ../plugin.py:399
+msgid "The supporter took a screenshot."
+msgstr "Der Supporter hat einen Screenshot gemacht."
+
+#: ../web.py:468
+msgid "The terminal stays blank?"
+msgstr "Das Terminal bleibt leer?"
+
+#: ../plugin.py:872
+#, python-format
+msgid "Their %d screenshots are deleted as well."
+msgstr "Ihre %d Screenshots werden ebenfalls gelöscht."
+
+#: ../plugin.py:870
+msgid "Their screenshot is deleted as well."
+msgstr "Ihr Screenshot wird ebenfalls gelöscht."
+
+#: ../plugin.py:352
+msgid "Until you answer, nobody can type in the terminals. Do you want to allow the access? If not, the session is ended for everybody."
+msgstr "Bis du antwortest, kann niemand in den Terminals tippen. Willst du den Zugriff erlauben? Wenn nicht, wird die Session für alle beendet."
+
+#: ../plugin.py:1082
+msgid "Waiting for the supporter to open a terminal..."
+msgstr "Warte darauf, dass der Supporter ein Terminal öffnet..."
+
+#: ../plugin.py:726
+msgid "Watch Session"
+msgstr "Session ansehen"
+
+#: ../plugin.py:658
+msgid "Watch the support session on the TV"
+msgstr "Die Support-Session am TV ansehen"
+
+#: ../plugin.py:705
+#, python-format
+msgid "When nobody uses it for %d minutes, you are asked whether to end it."
+msgstr "Nutzt sie %d Minuten lang niemand, wirst du gefragt, ob sie beendet werden soll."
+
+#: ../plugin.py:703
+msgid "When somebody joins the session, you have to approve the access with the remote control or in OpenWebif."
+msgstr "Tritt jemand der Session bei, musst du den Zugriff mit der Fernbedienung oder in OpenWebif freigeben."
+
+#: ../web.py:450
+msgid "access approved"
+msgstr "Zugriff freigegeben"
+
+#: ../plugin.py:1086
+msgid "automatic"
+msgstr "automatisch"
+
+#: ../plugin.py:1086
+msgid "pinned"
+msgstr "fixiert"
+
+#: ../plugin.py:814 ../web.py:487
+msgid "running"
+msgstr "läuft"
+
+#: ../plugin.py:1089
+#, python-format
+msgid "scrolled back %d lines"
+msgstr "%d Zeilen zurückgeblättert"
