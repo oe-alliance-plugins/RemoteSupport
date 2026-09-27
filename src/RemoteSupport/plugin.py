@@ -635,6 +635,7 @@ class TerminalTiles(GUIComponent):  # The small terminals as one list, the selec
 		self.tileColor = 0x00000000
 		self.fontSize = None
 		self.tiles = None
+		self.width = None
 
 	def applySkin(self, desktop, parent):
 		attributes = []
@@ -676,7 +677,8 @@ class TerminalTiles(GUIComponent):  # The small terminals as one list, the selec
 				self.l.setFont(1, gFont("Console", fontSize))
 				self.tiles = None
 		tiles = [(header, "\n".join(line.rstrip() for line in screen.display), active) for header, screen, active in tiles]
-		if tiles != self.tiles:
+		if (size.width(), tiles) != (self.width, self.tiles):  # The item gets narrower when the scrollbar appears.
+			self.width = size.width()
 			self.tiles = tiles
 			self.l.setList([[
 				header,  # Entries starting with None are not selectable.
@@ -689,7 +691,21 @@ class TerminalTiles(GUIComponent):  # The small terminals as one list, the selec
 	def setSelection(self, index, enabled):
 		if self.instance:
 			self.instance.setSelectionEnable(enabled)
-			self.instance.moveSelectionTo(index)
+			# The listbox keeps the row of the selection it had at the last paint, so there is one move per call.
+			current = self.instance.getCurrentIndex()
+			top = self.instance.getTopIndex()
+			rows = max(1, self.instance.size().height() // max(1, self.l.getItemSize().height()))
+			maxTop = max(0, len(self.tiles or ()) - rows)
+			if index == current and top <= maxTop:
+				return
+			if abs(index - current) == 1:  # Like a key press.
+				self.instance.moveSelection(self.instance.moveDown if index > current else self.instance.moveUp)
+			elif index < rows:  # Shows the first tiles.
+				self.instance.moveSelectionTo(index)
+			elif top > maxTop or index - (current - top) > maxTop:  # Empty rows below, also after a new list, the next call jumps from the end.
+				self.instance.moveSelection(self.instance.moveBottom)
+			else:
+				self.instance.moveSelectionTo(index)
 
 
 class RemoteSupportManager(Screen):
@@ -1036,13 +1052,13 @@ class RemoteTerminal:
 def viewerSkin():
 	lines = [
 		'<screen name="RemoteSupportViewer" title="Support Session" position="0,0" size="1280,720" resolution="1280,720" backgroundColor="#10000000" flags="wfNoBorder">',
-		'	<widget source="Title" render="Label" position="20,5" size="660,35" font="Regular;28" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
-		'	<widget name="header" position="20,42" size="540,28" font="Regular;22" foregroundColor="#00ffc000" backgroundColor="#10000000" />',
-		'	<widget name="connected" position="570,42" size="380,28" font="Regular;22" horizontalAlignment="right" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
-		'	<widget name="largeFocus" position="15,70" size="940,596" backgroundColor="#00ffc000" zPosition="1" />',
-		'	<eLabel position="17,72" size="936,592" backgroundColor="#00606060" zPosition="0" />',
-		'	<widget name="terminal" position="20,75" size="930,586" font="Console;18" noWrap="1" padding="10" backgroundColor="#00000000" zPosition="3" />',
-		'	<widget name="tiles" position="970,70" size="295,596" itemHeight="149" fieldMargins="2" headerFont="Regular;16" headerColor="#00ffc000" frameColor="#00606060" activeColor="#00ffffff" tileColor="#00000000" foregroundColor="#00ffffff" backgroundColor="#10000000" backgroundColorSelected="#00ffc000" scrollbarMode="showOnDemand" scrollbarScroll="byLine" transparent="1" />',
+		'\t<widget source="Title" render="Label" position="20,5" size="660,35" font="Regular;28" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
+		'\t<widget name="header" position="20,42" size="540,28" font="Regular;22" foregroundColor="#00ffc000" backgroundColor="#10000000" />',
+		'\t<widget name="connected" position="570,42" size="380,28" font="Regular;22" horizontalAlignment="right" foregroundColor="#00ffffff" backgroundColor="#10000000" />',
+		'\t<widget name="largeFocus" position="15,70" size="940,596" backgroundColor="#00ffc000" zPosition="1" />',
+		'\t<eLabel position="17,72" size="936,592" backgroundColor="#00606060" zPosition="0" />',
+		'\t<widget name="terminal" position="20,75" size="930,586" font="Console;18" noWrap="1" padding="10" backgroundColor="#00000000" zPosition="3" />',
+		'\t<widget name="tiles" position="970,70" size="295,596" itemHeight="149" fieldMargins="2" headerFont="Regular;16" headerColor="#00ffc000" frameColor="#00606060" activeColor="#00ffffff" tileColor="#00000000" foregroundColor="#00ffffff" backgroundColor="#10000000" backgroundColorSelected="#00ffc000" scrollbarMode="showOnDemand" scrollbarScroll="byLine" scrollbarOffset="10" transparent="1" />',
 	]
 	lines += [
 		colorKey("key_red", "20,e-45", 180),
