@@ -392,7 +392,7 @@ def replaceImages(data, placeholder=True):  # Returns data with a placeholder fo
 		if not ends:
 			return result + data[:start], data[start:][-4194304:]
 		end = min(ends)
-		params = {key: value for key, value in (param.split(b"=", 1) for param in data[start + len(IMAGE_START):end].split(b":", 1)[0].split(b";") if b"=" in param)}
+		params = dict(param.split(b"=", 1) for param in data[start + len(IMAGE_START):end].split(b":", 1)[0].split(b";") if b"=" in param)  # NOSONAR the rules S7494 and S7500 want the opposite of each other
 		try:
 			label = b64decode(params.get(b"name", b"")).decode("utf-8", "replace")
 		except ValueError:

@@ -516,6 +516,10 @@ class RemoteSupportIndicator(Screen):  # Shown like the mute symbol while a supp
 					self[widget].setVisible(visible)
 
 
+def colorKey(source, position, width, background=None):  # A color button of the skin, hidden without text.
+	return f'\t<widget source="{source}" render="Label" position="{position}" size="{width},40" backgroundColor="{background or source}" conditional="{source}" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center">\n\t\t<convert type="ConditionalShowHide" />\n\t</widget>'
+
+
 def sessionGrabs(path):  # The grabs of a session are saved next to its log.
 	return sorted(glob(f"{path[:-len(SESSION_LOG_SUFFIX)]}{GRAB_SUFFIX}*"))
 
@@ -638,6 +642,7 @@ class RemoteSupportManager(Screen):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(title())
 		actions = _("Remote Support Actions")
+		closeHelp = _("Close, the session continues")
 		self["status"] = Label()
 		self["description"] = Label()
 		self["counts"] = Label()
@@ -650,9 +655,9 @@ class RemoteSupportManager(Screen):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText(_("Session Logs"))
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
-			"cancel": (self.close, _("Close, the session continues")),
+			"cancel": (self.close, closeHelp),
 			"close": (self.keyCloseRecursive, _("Exit all menus, the session continues")),
-			"red": (self.close, _("Close, the session continues")),
+			"red": (self.close, closeHelp),
 			"blue": (self.keyBlue, _("Show the logs of previous support sessions"))
 		}, prio=0, description=actions)
 		self["sessionActions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
@@ -969,21 +974,11 @@ def viewerSkin(tiles):
 			f'\t<widget name="tile{index}" position="975,{y + 20}" size="285,113" font="Console;8" noWrap="1" padding="3" backgroundColor="#00000000" zPosition="3" />',
 		]
 	lines += [
-		'\t<widget source="key_red" render="Label" position="20,e-45" size="180,40" backgroundColor="key_red" conditional="key_red" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center">',
-		'\t\t<convert type="ConditionalShowHide" />',
-		'\t</widget>',
-		'\t<widget source="key_green" render="Label" position="210,e-45" size="180,40" backgroundColor="key_green" conditional="key_green" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center">',
-		'\t\t<convert type="ConditionalShowHide" />',
-		'\t</widget>',
-		'\t<widget source="key_yellow" render="Label" position="400,e-45" size="180,40" backgroundColor="key_yellow" conditional="key_yellow" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center">',
-		'\t\t<convert type="ConditionalShowHide" />',
-		'\t</widget>',
-		'\t<widget source="key_blue" render="Label" position="590,e-45" size="180,40" backgroundColor="key_blue" conditional="key_blue" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center">',
-		'\t\t<convert type="ConditionalShowHide" />',
-		'\t</widget>',
-		'\t<widget source="key_help" render="Label" position="e-100,e-45" size="80,40" backgroundColor="key_back" conditional="key_help" font="Regular;20" foregroundColor="key_text" horizontalAlignment="center" verticalAlignment="center">',
-		'\t\t<convert type="ConditionalShowHide" />',
-		'\t</widget>',
+		colorKey("key_red", "20,e-45", 180),
+		colorKey("key_green", "210,e-45", 180),
+		colorKey("key_yellow", "400,e-45", 180),
+		colorKey("key_blue", "590,e-45", 180),
+		colorKey("key_help", "e-100,e-45", 80, "key_back"),
 		'</screen>',
 	]
 	return "\n".join(lines)
