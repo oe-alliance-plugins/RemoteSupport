@@ -1,0 +1,18 @@
+{
+  "branch": "main",
+  "depends_recipe": "",
+  "description_control": "Remote support for a receiver through a shared terminal in the web browser (sshx)",
+  "description_recipe": "Remote support for a receiver through a shared terminal in the web browser (sshx)",
+  "history_source_dir": "RemoteSupport",
+  "internal_package_name": "enigma2-plugin-systemplugins-remotesupport",
+  "module_dir_name": "RemoteSupport",
+  "output_subdir": "RemoteSupport",
+  "package_name": "enigma2-plugin-systemplugins-remotesupport",
+  "plugin_src_rel": "RemoteSupport",
+  "python_package": "RemoteSupport",
+  "rdepends_recipe": "",
+  "replaces": "",
+  "repo_name": "RemoteSupport",
+  "rrecommends": "",
+  "rreplaces": ""
+}
