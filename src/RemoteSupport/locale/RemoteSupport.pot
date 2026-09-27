@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RemoteSupport\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-27 15:00+0200\n"
+"POT-Creation-Date: 2026-09-27 15:04+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -69,10 +69,6 @@ msgstr ""
 msgid "Automatic"
 msgstr ""
 
-#: ../plugin.py:1031
-msgid "Automatically show the terminal with the latest activity in the large view"
-msgstr ""
-
 #: ../plugin.py:648 ../plugin.py:1013
 msgid "Close"
 msgstr ""
@@ -81,28 +77,20 @@ msgstr ""
 msgid "Close Terminal"
 msgstr ""
 
-#: ../plugin.py:654
-msgid "Close the screen and exit all menus, a running support session continues"
+#: ../plugin.py:792
+msgid "Close and exit all menus"
 msgstr ""
 
-#: ../plugin.py:653 ../plugin.py:655
-msgid "Close the screen, a running support session continues"
+#: ../plugin.py:1028
+msgid "Close the large terminal"
 msgstr ""
 
 #: ../plugin.py:791
 msgid "Close the session logs"
 msgstr ""
 
-#: ../plugin.py:792
-msgid "Close the session logs and exit all menus"
-msgstr ""
-
-#: ../plugin.py:1003
-msgid "Close the session view, the session continues"
-msgstr ""
-
-#: ../plugin.py:1028
-msgid "Close the terminal of the large view, the supporter loses it"
+#: ../plugin.py:653 ../plugin.py:655 ../plugin.py:1003
+msgid "Close, the session continues"
 msgstr ""
 
 #: ../web.py:461
@@ -127,7 +115,7 @@ msgid "Delete All"
 msgstr ""
 
 #: ../plugin.py:802
-msgid "Delete all session logs except the one of a running session"
+msgid "Delete all finished session logs"
 msgstr ""
 
 #: ../plugin.py:799
@@ -187,6 +175,10 @@ msgstr ""
 msgid "Download"
 msgstr ""
 
+#: ../plugin.py:654
+msgid "Exit all menus, the session continues"
+msgstr ""
+
 #: ../web.py:476
 msgid "Full window"
 msgstr ""
@@ -211,10 +203,6 @@ msgstr ""
 msgid "Move back to the terminal list"
 msgstr ""
 
-#: ../plugin.py:1024
-msgid "Move to the large view to scroll its history"
-msgstr ""
-
 #: ../plugin.py:1129
 msgid "New Terminal"
 msgstr ""
@@ -222,6 +210,10 @@ msgstr ""
 #: ../plugin.py:350
 #, python-format
 msgid "New in the support session: %s"
+msgstr ""
+
+#: ../plugin.py:1023
+msgid "Next terminal / scroll forward"
 msgstr ""
 
 #: ../web.py:471
@@ -270,6 +262,10 @@ msgstr ""
 msgid "Press GREEN to start a support session. You will get a link and a QR code for your supporter, who then gets a terminal on this receiver in their web browser."
 msgstr ""
 
+#: ../plugin.py:1022
+msgid "Previous terminal / scroll back"
+msgstr ""
+
 #: ../plugin.py:548 ../web.py:442
 msgid "Remote Support"
 msgstr ""
@@ -294,12 +290,8 @@ msgstr ""
 msgid "Screenshots"
 msgstr ""
 
-#: ../plugin.py:1023
-msgid "Select the next terminal or scroll forward in the large view"
-msgstr ""
-
-#: ../plugin.py:1022
-msgid "Select the previous terminal or scroll back in the large view"
+#: ../plugin.py:1024
+msgid "Scroll in the large terminal"
 msgstr ""
 
 #: ../plugin.py:711
@@ -338,8 +330,12 @@ msgstr ""
 msgid "Show the logs of previous support sessions"
 msgstr ""
 
+#: ../plugin.py:1031
+msgid "Show the most active terminal large"
+msgstr ""
+
 #: ../plugin.py:805
-msgid "Show the screenshots of the selected session"
+msgid "Show the screenshots of the session"
 msgstr ""
 
 #: ../plugin.py:795 ../plugin.py:796
@@ -347,7 +343,7 @@ msgid "Show the selected session log"
 msgstr ""
 
 #: ../plugin.py:1021
-msgid "Show the selected terminal in the large view to scroll it, OK again switches back to the previous one"
+msgid "Show the terminal large / back"
 msgstr ""
 
 #: ../plugin.py:722 ../web.py:452

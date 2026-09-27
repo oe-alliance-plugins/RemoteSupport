@@ -650,9 +650,9 @@ class RemoteSupportManager(Screen):
 		self["key_yellow"] = StaticText()
 		self["key_blue"] = StaticText(_("Session Logs"))
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
-			"cancel": (self.close, _("Close the screen, a running support session continues")),
-			"close": (self.keyCloseRecursive, _("Close the screen and exit all menus, a running support session continues")),
-			"red": (self.close, _("Close the screen, a running support session continues")),
+			"cancel": (self.close, _("Close, the session continues")),
+			"close": (self.keyCloseRecursive, _("Exit all menus, the session continues")),
+			"red": (self.close, _("Close, the session continues")),
 			"blue": (self.keyBlue, _("Show the logs of previous support sessions"))
 		}, prio=0, description=actions)
 		self["sessionActions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
@@ -789,7 +789,7 @@ class RemoteSupportLogs(Screen):
 		self["key_blue"] = StaticText()
 		self["actions"] = HelpableActionMap(self, ["OkCancelActions"], {
 			"cancel": (self.close, _("Close the session logs")),
-			"close": (self.keyCloseRecursive, _("Close the session logs and exit all menus"))
+			"close": (self.keyCloseRecursive, _("Close and exit all menus"))
 		}, prio=0, description=actions)
 		self["showActions"] = HelpableActionMap(self, ["OkCancelActions", "ColorActions"], {
 			"ok": (self.keyShow, _("Show the selected session log")),
@@ -799,10 +799,10 @@ class RemoteSupportLogs(Screen):
 			"red": (self.keyDelete, _("Delete the selected session log"))
 		}, prio=0, description=actions)
 		self["deleteAllActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"blue": (self.keyDeleteAll, _("Delete all session logs except the one of a running session"))
+			"blue": (self.keyDeleteAll, _("Delete all finished session logs"))
 		}, prio=0, description=actions)
 		self["screenshotActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"yellow": (self.keyScreenshots, _("Show the screenshots of the selected session"))
+			"yellow": (self.keyScreenshots, _("Show the screenshots of the session"))
 		}, prio=0, description=actions)
 		self["list"].onSelectionChanged.append(self.updateButtons)
 		self.onLayoutFinish.append(self.loadLogs)
@@ -1000,7 +1000,7 @@ class RemoteSupportViewer(Screen):
 		Screen.__init__(self, session, enableHelp=True)
 		self.setTitle(_("Support Session"))
 		actions = _("Support Session Actions")
-		closeHelp = _("Close the session view, the session continues")
+		closeHelp = _("Close, the session continues")
 		self["header"] = Label()
 		self["connected"] = Label()
 		self["terminal"] = Label()
@@ -1018,17 +1018,17 @@ class RemoteSupportViewer(Screen):
 			"cancel": (self.close, closeHelp),
 			"close": (self.close, closeHelp),
 			"red": (self.close, closeHelp),
-			"ok": (self.keyShowLarge, _("Show the selected terminal in the large view to scroll it, OK again switches back to the previous one")),
-			"up": (self.keyUp, _("Select the previous terminal or scroll back in the large view")),
-			"down": (self.keyDown, _("Select the next terminal or scroll forward in the large view")),
-			"left": (self.keyLeft, _("Move to the large view to scroll its history")),
+			"ok": (self.keyShowLarge, _("Show the terminal large / back")),
+			"up": (self.keyUp, _("Previous terminal / scroll back")),
+			"down": (self.keyDown, _("Next terminal / scroll forward")),
+			"left": (self.keyLeft, _("Scroll in the large terminal")),
 			"right": (self.keyRight, _("Move back to the terminal list"))
 		}, prio=0, description=actions)
 		self["closeActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"green": (self.keyCloseTerminal, _("Close the terminal of the large view, the supporter loses it"))
+			"green": (self.keyCloseTerminal, _("Close the large terminal"))
 		}, prio=0, description=actions)
 		self["automaticActions"] = HelpableActionMap(self, ["ColorActions"], {
-			"yellow": (self.keyAutomatic, _("Automatically show the terminal with the latest activity in the large view"))
+			"yellow": (self.keyAutomatic, _("Show the most active terminal large"))
 		}, prio=0, description=actions)
 		self["newActions"] = HelpableActionMap(self, ["ColorActions"], {
 			"blue": (self.keyNewTerminal, _("Open a new terminal for the supporter"))
