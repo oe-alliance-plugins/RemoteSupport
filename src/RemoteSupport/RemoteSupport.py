@@ -645,6 +645,15 @@ def participants():  # [(uid, name, name is final)] of everybody except the rece
 	return result
 
 
+def currentApprovals():  # The uids of the approved users, dropped once none of them is connected, else a new terminal would open before the lock is set.
+	uids = set(readFile(APPROVED_FILE).split())
+	if uids and not uids & {uid for uid, name, final in participants()}:
+		remove(APPROVED_FILE)
+		appendLog(readFile(LOG_PATH_FILE), f"{strftime('%Y-%m-%d %H:%M:%S')} Nobody approved is connected anymore, the next user has to be approved again")
+		return set()
+	return uids
+
+
 def watcherModules():
 	try:
 		return all(find_spec(module) for module in WATCHER_MODULES)
@@ -831,7 +840,7 @@ class RemoteSupportConsole:  # remotesupport: a session without enigma2, e.g. wh
 					writeText(HANDOVER_FILE, f"{CONSOLE_ORIGIN}\napproved")
 
 	def checkParticipants(self):  # Like the plugin: everybody has to be approved, meanwhile the session is read-only.
-		approvedUids = set(readFile(APPROVED_FILE).split())
+		approvedUids = currentApprovals()
 		named = [(uid, name) for uid, name, final in participants() if final and name == self.approve and uid not in approvedUids]
 		if named:
 			approvedUids |= {uid for uid, name in named}

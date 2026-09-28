@@ -36,7 +36,7 @@ from Tools.Directories import SCOPE_PLUGINS, fileReadLine, fileReadLines, fileWr
 from Tools.Notifications import AddModalNotification, notificationCenter
 from skin import parseColor, parseFont
 from . import RemoteSupport as RemoteSupportTools, _, ngettext
-from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, CHAT_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, HANDOVER_FILE, IDLE_TIMEOUT, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, NOTIFY_SOCKET, SESSION_DIR, SESSION_ENDED, SESSION_LOG_SUFFIX, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, STOP_TIMEOUT, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE, hangupShells, participants, prepareShell, runningPid, signalPid, sshxBinary, terminalLogs
+from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, CHAT_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, HANDOVER_FILE, IDLE_TIMEOUT, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, NOTIFY_SOCKET, SESSION_DIR, SESSION_ENDED, SESSION_LOG_SUFFIX, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, STOP_TIMEOUT, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE, currentApprovals, hangupShells, participants, prepareShell, runningPid, signalPid, sshxBinary, terminalLogs
 
 MODULE_NAME = "RemoteSupport"
 
@@ -316,7 +316,7 @@ class SshxSession:
 					with open(APPROVED_FILE, "w") as fd:
 						fd.write("".join(f"{uid}\n" for uid in sorted(approvedUids)))
 					self.logEvent(f"Access for {', '.join(name for uid, name, final in connected)} kept from before the takeover")
-		approvedUids = self.approvedUids()
+		approvedUids = currentApprovals()
 		waiting = [(uid, name, final) for uid, name, final in participants() if uid not in approvedUids]
 		if waiting and not exists(LOCK_FILE):
 			fileWriteLine(LOCK_FILE, "1", source=MODULE_NAME)
