@@ -36,7 +36,7 @@ from Tools.Directories import SCOPE_PLUGINS, fileReadLine, fileReadLines, fileWr
 from Tools.Notifications import AddModalNotification, notificationCenter
 from skin import parseColor, parseFont
 from . import RemoteSupport as RemoteSupportTools, _, ngettext
-from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, CHAT_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, HANDOVER_FILE, IDLE_TIMEOUT, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, NOTIFY_SOCKET, SESSION_DIR, SESSION_ENDED, SESSION_LOG_SUFFIX, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, STOP_TIMEOUT, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE, currentApprovals, hangupShells, participants, prepareShell, runningPid, signalPid, sshxBinary, terminalLogs
+from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, CHAT_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, HANDOVER_FILE, IDLE_TIMEOUT, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, NOTIFY_SOCKET, SESSION_DIR, SESSION_ENDED, SESSION_LOG_SUFFIX, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SHARE_OUTPUT_FILE, SHARE_PID_FILE, SSHX_PID_FILE, STOP_TIMEOUT, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE, currentApprovals, hangupShells, participants, prepareShell, runningPid, shareCommand, shareUrl, signalPid, sshxBinary, terminalLogs
 
 MODULE_NAME = "RemoteSupport"
 
@@ -190,6 +190,7 @@ class SshxSession:
 			self.monitorTimer.start(1000)
 			if self.url:
 				self.startWatcher()
+				self.startShare()
 		elif exists(SESSION_DIR):
 			self.logPath = fileReadLine(LOG_PATH_FILE, default="", source=MODULE_NAME) or None
 			self.cleanup("it ended while the GUI was not running")
@@ -247,6 +248,7 @@ class SshxSession:
 				self.logEvent(f"Session link: {self.url.split('#')[0]}")  # Without the encryption key.
 				RemoteSupportTools.touchActivity()
 				self.startWatcher()
+				self.startShare()
 				self.setState(self.STATE_RUNNING)
 				self.monitorTimer.start(1000)
 			elif not pid and time() - self.startTime > 3:  # The pid file is written by the detached shell.
@@ -271,6 +273,9 @@ class SshxSession:
 			withdrawQuestion(callback)
 		errors = [line.strip() for line in fileReadLines(SSHX_ERROR_FILE, default=[], source=MODULE_NAME) if line.strip()]
 		self.stopWatcher()
+		pid = runningPid(SHARE_PID_FILE, "RemoteSupport")
+		if pid:
+			signalPid(pid, SIGTERM)
 		rmtree(SESSION_DIR, ignore_errors=True)
 		if error and errors:
 			reason = f"{reason} ({errors[-1]})"
@@ -290,7 +295,7 @@ class SshxSession:
 
 	def killStale(self):
 		hangupShells()
-		for pidFile, name in ((SSHX_PID_FILE, "sshx"), (WATCHER_PID_FILE, "RemoteSupport")):
+		for pidFile, name in ((SSHX_PID_FILE, "sshx"), (WATCHER_PID_FILE, "RemoteSupport"), (SHARE_PID_FILE, "RemoteSupport")):
 			pid = runningPid(pidFile, name)
 			if pid:
 				signalPid(pid, SIGTERM)
@@ -300,6 +305,10 @@ class SshxSession:
 			return
 		name = f"{gethostname()} ({BoxInfo.getItem('imageversion')})"  # The image version helps the supporter.
 		startDetached(f"exec /usr/bin/python3 {quote(RemoteSupportTools.__file__)} watcher {quote(name)}", WATCHER_PID_FILE, WATCHER_OUTPUT_FILE)
+
+	def startShare(self):  # The page the QR code on the TV leads to, also running after the takeover by the command line.
+		if not runningPid(SHARE_PID_FILE, "RemoteSupport"):
+			startDetached(f"exec {' '.join(quote(arg) for arg in shareCommand())}", SHARE_PID_FILE, SHARE_OUTPUT_FILE)
 
 	def stopWatcher(self):
 		pid = runningPid(WATCHER_PID_FILE, "RemoteSupport")
@@ -799,7 +808,8 @@ class RemoteSupportManager(Screen):
 				access = _("When somebody joins the session, you have to approve the access with the remote control or in OpenWebif.")
 			keepRunning = _("The session keeps running when you close this screen. Press YELLOW to watch what the supporter is doing and GREEN to end the session.")
 			idle = _("When nobody uses it for %d minutes, you are asked whether to end it.") % ((IDLE_TIMEOUT - IDLE_WARNING) // 60)
-			description = _("Send the link below to your supporter or let them scan the QR code.") + f" {access}\n\n{keepRunning} {idle}"
+			share = shareUrl()
+			description = (_("Scan the QR code with your phone and send the link to your supporter from there.") if share else _("Send the link below to your supporter or let them scan the QR code.")) + f" {access}\n\n{keepRunning} {idle}"
 			green = _("Stop")
 		elif state == SshxSession.STATE_STOPPING:
 			status = _("Stopping support session...")
@@ -815,8 +825,9 @@ class RemoteSupportManager(Screen):
 		self["description"].setText(description)
 		self["url"].setText(url or "")
 		self["linkwarning"].setText(_("Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access.") if url else "")
-		self["qrhint"].setText(_("Scan to open the support session") if url else "")
-		self["qrcode"].setText(url)
+		share = shareUrl() if url else None
+		self["qrhint"].setText((_("Scan with your phone to send the link to your supporter") if share else _("Scan to open the support session")) if url else "")
+		self["qrcode"].setText(share or url)
 		self["key_green"].setText(green)
 		self["sessionActions"].setEnabled(green != "")
 		self["key_yellow"].setText(_("Watch Session") if url else "")

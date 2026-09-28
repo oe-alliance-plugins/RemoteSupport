@@ -22,8 +22,11 @@ from argparse import ArgumentParser
 from base64 import b64decode, b64encode
 from codecs import getincrementaldecoder
 from fcntl import ioctl
+from gettext import translation
 from glob import glob
+from html import escape
 from importlib.util import find_spec
+from json import dumps
 from os import O_APPEND, O_CREAT, O_WRONLY, X_OK, access, chmod, close, environ, execv, fstat, ftruncate, getpid, kill, makedirs, open as osOpen, read, remove, rename, stat, utime, write
 from os.path import basename, dirname, exists, join
 from pty import fork
@@ -32,12 +35,13 @@ from select import select
 from shlex import quote
 from shutil import rmtree, which
 from signal import SIG_DFL, SIGHUP, SIGINT, SIGTERM, SIGWINCH, signal
-from socket import AF_UNIX, SOCK_DGRAM, gethostname, socket
+from socket import AF_INET, AF_UNIX, SOCK_DGRAM, SOCK_STREAM, create_connection, gethostname, socket
 from subprocess import DEVNULL, STDOUT, Popen, run
 from sys import argv, stdin, stdout
 from termios import TCIFLUSH, TCSAFLUSH, TIOCGWINSZ, TIOCSWINSZ, tcflush, tcgetattr, tcsetattr
 from time import sleep, strftime, time
 from tty import setraw
+from urllib.parse import quote as quoteUrl
 
 SESSION_DIR = "/tmp/remotesupport"
 NOTIFY_SOCKET = "/var/run/remotesupport.socket"  # enigma2 receives "handover" and "stop <reason>" from the command line. Outside of SESSION_DIR, which is removed with every session.
@@ -46,6 +50,11 @@ SSHX_PID_FILE = join(SESSION_DIR, "sshx.pid")
 SSHX_OUTPUT_FILE = join(SESSION_DIR, "sshx.out")
 SSHX_ERROR_FILE = join(SESSION_DIR, "sshx.err")
 WATCHER_PID_FILE = join(SESSION_DIR, "watcher.pid")
+SHARE_PID_FILE = join(SESSION_DIR, "share.pid")
+SHARE_PORT_FILE = join(SESSION_DIR, "share.port")
+SHARE_OUTPUT_FILE = join(SESSION_DIR, "share.out")
+SHARE_PATH = "/remotesupport/share"
+SHARE_START_TIMEOUT = 3
 WATCHER_OUTPUT_FILE = join(SESSION_DIR, "watcher.out")
 LOG_PATH_FILE = join(SESSION_DIR, "logpath")
 APPROVED_FILE = join(SESSION_DIR, "approved")  # The uids of the approved participants.
@@ -87,6 +96,77 @@ PING_INTERVAL = 15
 JOIN_DELAY = 5  # The server names new users "User <n>" until their browser sets the chosen name.
 ACTIVITY_INTERVAL = 10
 DEFAULT_NAME = compile(r"^User \d+$")
+
+SHARE_PAGE = """<!DOCTYPE html>
+<html lang="{LANGUAGE}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{TITLE}</title>
+<style>
+body { margin: 0; padding: 16px; font: 17px/1.45 sans-serif; color-scheme: light dark; max-width: 560px; margin-inline: auto; }
+h1 { font-size: 22px; margin: 0 0 12px; }
+.link { padding: 12px; border: 1px solid rgba(128, 128, 128, .5); border-radius: 8px; word-break: break-all; user-select: all; font-family: monospace; font-size: 15px; }
+.buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.buttons a, .buttons button { display: block; padding: 14px 8px; border: 0; border-radius: 8px; font: inherit; font-weight: bold; text-align: center; text-decoration: none; color: #fff; background: #555; cursor: pointer; }
+.buttons .share { grid-column: 1 / -1; background: #1565c0; }
+.buttons [hidden] { display: none; }
+.buttons .discord { background: #5865f2; }
+.buttons .whatsapp { background: #1f8f4e; }
+.buttons .telegram { background: #2481cc; }
+.hint { color: #888; font-size: 15px; }
+.warning { color: #c62828; font-size: 15px; }
+</style>
+</head>
+<body>
+<h1>{TITLE}</h1>
+{BODY}
+</body>
+</html>
+"""
+SHARE_BODY = """<p>{SEND}</p>
+<div class="link" id="link">{LINK}</div>
+<div class="buttons">
+<button class="share" id="share" hidden>{SHARE}</button>
+<button class="discord" id="discord">Discord</button>
+<a class="telegram" href="https://t.me/share/url?url={LINK_URL}&amp;text={INTRO_URL}">Telegram</a>
+<a class="whatsapp" href="https://wa.me/?text={MESSAGE_URL}">WhatsApp</a>
+<a href="sms:?&amp;body={MESSAGE_URL}">SMS</a>
+<a href="mailto:?subject={TITLE_URL}&amp;body={MESSAGE_URL}">{MAIL}</a>
+<button id="copy">{COPY}</button>
+</div>
+<p class="hint">{DO_NOT_OPEN}</p>
+<p class="warning">{WARNING}</p>
+<script>
+const message = {MESSAGE_JSON};
+const shareButton = document.getElementById("share");
+if (navigator.share) {  // Only in a secure context (HTTPS), the links above work everywhere.
+	shareButton.hidden = false;
+	shareButton.onclick = () => navigator.share({ text: message }).catch(() => {});
+}
+function copyMessage(done) {
+	if (navigator.clipboard && window.isSecureContext) {
+		navigator.clipboard.writeText(message).then(done);
+		return;
+	}
+	const area = document.createElement("textarea");  // The clipboard API needs HTTPS as well.
+	area.value = message;
+	area.style.position = "fixed";
+	area.style.opacity = "0";
+	document.body.appendChild(area);
+	area.select();
+	if (document.execCommand("copy")) {
+		done();
+	}
+	area.remove();
+}
+document.getElementById("copy").onclick = event => copyMessage(() => { event.target.textContent = {COPIED_JSON}; });
+document.getElementById("discord").onclick = event => copyMessage(() => {  // Discord can not take a text, it is pasted there.
+	event.target.textContent = {PASTE_DISCORD_JSON};
+	setTimeout(() => { location.href = "https://discord.com/channels/@me"; }, 1500);
+});
+</script>
+"""
 
 # sshx execs --shell without arguments.
 SHELL_STUB = """#!/bin/sh
@@ -654,6 +734,120 @@ def currentApprovals():  # The uids of the approved users, dropped once none of 
 	return uids
 
 
+def enigmaLanguage():  # The share server may run without enigma2, the settings only hold a language that differs from the default.
+	for line in readFile(ENIGMA_SETTINGS).splitlines():
+		if line.startswith("config.misc.locale="):
+			return line.split("=", 1)[1]
+	return {"Atto.TV": "pt_BR", "Zgemma": "en_US", "Beyonwiz": "en_AU"}.get(boxInfo().get("displaybrand", ""), "de_DE")  # The default of StartEnigma.py.
+
+
+def shareTranslation():  # English when there is no translation.
+	language = enigmaLanguage()
+	return language, translation("RemoteSupport", join(dirname(__file__), "locale"), languages=[language, language[:2]], fallback=True).gettext
+
+
+def sharePage():  # For the phone of the user, the QR code leads here.
+	language, _ = shareTranslation()
+	url = readFile(LINK_FILE) if runningPid(SSHX_PID_FILE, "sshx") else ""
+	if url:
+		intro = _("Here is the link to the support session of my receiver:")
+		message = f"{intro} {url}"
+		body = SHARE_BODY
+		for key, value in (
+			("{MESSAGE_JSON}", dumps(message)),
+			("{COPIED_JSON}", dumps(_("Copied"))),
+			("{PASTE_DISCORD_JSON}", dumps(_("Copied, paste it in Discord"))),
+			("{MESSAGE_URL}", quoteUrl(message, safe="")),
+			("{INTRO_URL}", quoteUrl(intro, safe="")),
+			("{LINK_URL}", quoteUrl(url, safe="")),
+			("{TITLE_URL}", quoteUrl(_("Remote Support"), safe="")),
+			("{SEND}", escape(_("Send this link to your supporter:"))),
+			("{LINK}", escape(url)),
+			("{SHARE}", escape(_("Share"))),
+			("{MAIL}", escape(_("E-mail"))),
+			("{COPY}", escape(_("Copy"))),
+			("{DO_NOT_OPEN}", escape(_("Do not open the link yourself, you would join the session as a new user."))),
+			("{WARNING}", escape(_("Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access.")))
+		):
+			body = body.replace(key, value)
+	else:
+		body = f"<p>{escape(_('No support session active'))}</p>"
+	return SHARE_PAGE.replace("{LANGUAGE}", language[:2]).replace("{TITLE}", escape(_("Remote Support"))).replace("{BODY}", body)
+
+
+def runShareServer(port):  # Serves the share page until the session ends.
+	from http.server import BaseHTTPRequestHandler, HTTPServer
+
+	class ShareHandler(BaseHTTPRequestHandler):
+		def do_GET(self):
+			if self.path.split("?", 1)[0] != SHARE_PATH:
+				self.send_error(404)
+				return
+			data = sharePage().encode("utf-8")
+			self.send_response(200)
+			self.send_header("Content-Type", "text/html; charset=utf-8")
+			self.send_header("Content-Length", str(len(data)))
+			self.send_header("Cache-Control", "no-store")
+			self.end_headers()
+			self.wfile.write(data)
+
+		def log_message(self, *args):
+			pass
+
+	server = HTTPServer(("", port), ShareHandler)
+	server.timeout = 2
+	while exists(SESSION_DIR):
+		server.handle_request()
+
+
+def shareCommand():  # The share server on a free port, a new one for every session.
+	with socket(AF_INET, SOCK_STREAM) as sock:
+		sock.bind(("", 0))
+		port = sock.getsockname()[1]
+	writeText(SHARE_PORT_FILE, port)
+	return ["/usr/bin/python3", __file__, "share", str(port)]
+
+
+def shareReachable(timeout):
+	port = readFile(SHARE_PORT_FILE)
+	end = time() + timeout
+	while port.isdigit():
+		try:
+			create_connection(("127.0.0.1", int(port)), 1).close()
+			return True
+		except OSError:
+			if time() >= end:
+				break
+			sleep(0.1)
+	return False
+
+
+def shareUrl():  # None without a network, then the QR code leads to the sshx link.
+	port = readFile(SHARE_PORT_FILE)
+	if not port.isdigit():
+		return None
+	try:
+		with socket(AF_INET, SOCK_DGRAM) as sock:
+			sock.connect(("10.255.255.255", 1))  # Selects the address of the default route, nothing is sent.
+			address = sock.getsockname()[0]
+	except OSError:
+		return None
+	if address.startswith("127.") or address == "0.0.0.0":
+		return None
+	return f"http://{address}:{port}{SHARE_PATH}"
+
+
+def printQrCode(text):
+	try:
+		from qrcode import QRCode, constants  # Not at module level as the package may be missing.
+		qrCode = QRCode(error_correction=constants.ERROR_CORRECT_L, border=1)  # Small for the terminal, a screen needs no more error correction.
+		qrCode.add_data(text)
+		qrCode.make(fit=True)
+		qrCode.print_ascii(out=stdout, invert=True)
+	except ImportError:
+		pass
+
+
 def watcherModules():
 	try:
 		return all(find_spec(module) for module in WATCHER_MODULES)
@@ -762,6 +956,9 @@ class RemoteSupportConsole:  # remotesupport: a session without enigma2, e.g. wh
 			with open(WATCHER_OUTPUT_FILE, "w") as output:
 				watcher = Popen(["/usr/bin/python3", __file__, "watcher", f"{gethostname()} ({info.get('imageversion', '')})"], stdin=DEVNULL, stdout=output, stderr=STDOUT, start_new_session=True)
 			writeText(WATCHER_PID_FILE, watcher.pid)
+		with open(SHARE_OUTPUT_FILE, "w") as output:
+			share = Popen(shareCommand(), stdin=DEVNULL, stdout=output, stderr=STDOUT, start_new_session=True)
+		writeText(SHARE_PID_FILE, share.pid)
 		writeText(HANDOVER_FILE, f"{CONSOLE_ORIGIN}\napproved" if self.approve == "all" else CONSOLE_ORIGIN)  # Every terminal is approved, enigma2 keeps the access of who is connected.
 		notifyEnigma("handover")  # Without enigma2 it takes the session over when it starts.
 		return self.attach()
@@ -769,16 +966,12 @@ class RemoteSupportConsole:  # remotesupport: a session without enigma2, e.g. wh
 	def attach(self):
 		self.sessionLog = readFile(LOG_PATH_FILE)
 		link = readFile(LINK_FILE)
+		share = shareUrl() if shareReachable(SHARE_START_TIMEOUT) else None  # Just started it may still load.
 		print(f"\nSend this link to your supporter or let them scan the QR code:\n\n{link}\n")
-		try:
-			from qrcode import QRCode, constants  # Not at module level as the package may be missing.
-			qrCode = QRCode(error_correction=constants.ERROR_CORRECT_L, border=1)  # Small for the terminal, a screen needs no more error correction.
-			qrCode.add_data(link)
-			qrCode.make(fit=True)
-			qrCode.print_ascii(out=stdout, invert=True)
-		except ImportError:
-			pass
-		print("Do not post the link or a screenshot of it in public forums: everybody who has it can try to join.\n")
+		printQrCode(share or link)
+		if share:  # Tools that start remotesupport show the QR code of this line.
+			print(f"QR: {share}")
+		print("\nDo not post the link or a screenshot of it in public forums: everybody who has it can try to join.\n")
 		if enigmaRunning():
 			print("enigma2 manages the session, the access is approved on the TV. 'remotesupport stop' ends it.")
 			return 0
@@ -920,9 +1113,10 @@ class RemoteSupportConsole:  # remotesupport: a session without enigma2, e.g. wh
 		return 0
 
 	def cleanup(self, reason=None):
-		pid = runningPid(WATCHER_PID_FILE, "RemoteSupport")
-		if pid:
-			signalPid(pid, SIGTERM)
+		for pidFile in (WATCHER_PID_FILE, SHARE_PID_FILE):
+			pid = runningPid(pidFile, "RemoteSupport")
+			if pid:
+				signalPid(pid, SIGTERM)
 		rmtree(SESSION_DIR, ignore_errors=True)
 		self.logEvent(f"{SESSION_ENDED}: {reason}" if reason else SESSION_ENDED)
 
@@ -967,6 +1161,12 @@ if __name__ == "__main__":
 		grabCommand(argv[2:])
 	elif argv[1:2] == ["console"]:
 		raise SystemExit(console(argv[2:]))
+	elif argv[1:2] == ["share"] and argv[2:3] and argv[2].isdigit():
+		signal(SIGTERM, terminate)
+		try:
+			runShareServer(int(argv[2]))
+		except Terminated:
+			pass
 	elif argv[1:2] == ["watcher"]:
 		for signalNumber in (SIGHUP, SIGINT, SIGTERM):
 			signal(signalNumber, terminate)
