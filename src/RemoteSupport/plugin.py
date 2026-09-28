@@ -828,7 +828,7 @@ class RemoteSupportManager(Screen):
 	def keyGreen(self):
 		warning = _("After you approved the access on the TV, the supporter has full root access to your receiver as long as the session is running. Only share the link with people you trust!")
 		if sshxSession.state in (SshxSession.STATE_STARTING, SshxSession.STATE_RUNNING):
-			self.session.openWithCallback(self.stopCallback, MessageBox, _("Do you really want to end the support session?"), default=False)
+			self.session.openWithCallback(self.stopCallback, MessageBox, _("Do you really want to end the support session?"), default=True)
 		elif not sshxSession.isActive() and not incomplete():
 			self.session.openWithCallback(self.startCallback, MessageBox, f"{warning}\n\n" + _("Do you want to start a support session?"), default=False)
 
