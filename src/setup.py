@@ -3,7 +3,7 @@ import setup_translate
 
 pkg = 'SystemPlugins.RemoteSupport'
 setup(name='enigma2-plugin-systemplugins-remotesupport',
-       version='1.0',
+       version='1.1',
        description='Remote support for a receiver through a shared terminal in the web browser (sshx)',
        package_dir={pkg: 'RemoteSupport'},
        packages=[pkg],

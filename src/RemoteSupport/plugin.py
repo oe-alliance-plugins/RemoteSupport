@@ -1,3 +1,4 @@
+from codecs import getincrementaldecoder
 from glob import glob
 from importlib import invalidate_caches
 from importlib.util import find_spec
@@ -987,9 +988,17 @@ class RemoteTerminal:
 		self.lastActivity = 0
 		self.paused = False  # Output is kept back while the view is scrolled back.
 		self.pending = b""
-		from pyte import ByteStream, HistoryScreen  # Not at module level as the package may be missing.
-		self.screen = HistoryScreen(80, 24, history=1000, ratio=0.5)
-		self.stream = ByteStream(self.screen)
+		from pyte import HistoryScreen, Stream  # Not at module level as the package may be missing.
+
+		class TerminalScreen(HistoryScreen):
+			def set_margins(self, *args, **kwargs):  # pyte 0.8.2 also calls it for CSI ? r (restore private modes), which has no margins.
+				if not kwargs.get("private"):
+					HistoryScreen.set_margins(self, *args)
+
+		self.screen = TerminalScreen(80, 24, history=1000, ratio=0.5)
+		self.stream = Stream(self.screen)
+		self.stream.use_utf8 = False  # pyte ignores the switch to the line drawing characters in UTF-8 mode, which mc uses for its frames.
+		self.decoder = getincrementaldecoder("utf-8")(errors="replace")  # So the UTF-8 is decoded here.
 
 	def update(self):
 		size = fileReadLine(f"{self.base}.size", default="", source=MODULE_NAME).split()
@@ -1003,6 +1012,7 @@ class RemoteTerminal:
 			if length < self.offset:  # The log was truncated.
 				self.offset = 0
 				self.screen.reset()
+				self.decoder.reset()
 			if length == self.offset:
 				return False
 			with open(f"{self.base}.log", "rb") as fd:
@@ -1015,8 +1025,14 @@ class RemoteTerminal:
 		if self.paused:
 			self.pending += data
 		else:
-			self.stream.feed(data)
+			self.feed(data)
 		return True
+
+	def feed(self, data):  # Output pyte can not handle must not end enigma2, the view only misses it.
+		try:
+			self.stream.feed(self.decoder.decode(data))
+		except Exception as err:
+			print(f"[{MODULE_NAME}] Error: Unable to show the output of terminal {basename(self.base)}!  ({type(err).__name__}: {err})")
 
 	def scrolledBack(self):
 		return len(self.screen.history.bottom)
@@ -1033,7 +1049,7 @@ class RemoteTerminal:
 			self.screen.next_page()
 		self.paused = False
 		if self.pending:
-			self.stream.feed(self.pending)
+			self.feed(self.pending)
 			self.pending = b""
 
 
