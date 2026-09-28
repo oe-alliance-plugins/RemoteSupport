@@ -8,5 +8,6 @@ setup(name='enigma2-plugin-systemplugins-remotesupport',
        package_dir={pkg: 'RemoteSupport'},
        packages=[pkg],
        package_data={pkg: ['*.png', 'locale/*/LC_MESSAGES/*.mo']},
-       cmdclass=setup_translate.cmdclass,  # for translation
+       data_files=[('/usr/bin', ['bin/remotesupport'])],
+       cmdclass=setup_translate.cmdclass,
       )

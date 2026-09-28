@@ -1,16 +1,17 @@
 from glob import glob
 from importlib import invalidate_caches
 from importlib.util import find_spec
-from os import chmod, kill, makedirs, remove, stat
+from os import chmod, makedirs, remove, stat
 from os.path import basename, dirname, exists, join
 from re import search
+from select import POLLIN
 from shlex import quote
-from shutil import rmtree, which
+from shutil import rmtree
 from signal import SIGHUP, SIGINT, SIGTERM
-from socket import gethostname
+from socket import AF_UNIX, SOCK_DGRAM, gethostname, socket
 from time import strftime, strptime, time
 
-from enigma import RT_HALIGN_LEFT, RT_VALIGN_CENTER, RT_VALIGN_TOP, eCanvas, eListbox, eListboxPythonMultiContent, eRect, eTimer, gFont, gRGB, getDesktop
+from enigma import RT_HALIGN_LEFT, RT_VALIGN_CENTER, RT_VALIGN_TOP, eCanvas, eListbox, eListboxPythonMultiContent, eRect, eSocketNotifier, eTimer, gFont, gRGB, getDesktop
 
 from Components.ActionMap import HelpableActionMap
 from Components.config import config
@@ -34,47 +35,24 @@ from Tools.Directories import SCOPE_PLUGINS, fileReadLine, fileReadLines, fileWr
 from Tools.Notifications import AddModalNotification, notificationCenter
 from skin import parseColor, parseFont
 from . import RemoteSupport as RemoteSupportTools, _, ngettext
-from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, BIN_DIR, CHAT_FILE, CONNECTED_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, SESSION_DIR, SHELL_RC, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE, WIZARD_FILE
+from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, CHAT_FILE, CREATE_FILE, GRAB_SUFFIX, GRABBED_FILE, HANDOVER_FILE, IDLE_TIMEOUT, LINK_FILE, LOCK_FILE, LOG_PATH_FILE, NOTIFY_SOCKET, SESSION_DIR, SESSION_ENDED, SESSION_LOG_SUFFIX, SHELL_WRAPPER, SSHX_ERROR_FILE, SSHX_OUTPUT_FILE, SSHX_PID_FILE, STOP_TIMEOUT, WATCHER_OUTPUT_FILE, WATCHER_PID_FILE, hangupShells, participants, prepareShell, runningPid, signalPid, sshxBinary, terminalLogs
 
 MODULE_NAME = "RemoteSupport"
 
 REQUIRED_MODULES = ("websocket", "cbor2", "cryptography.hazmat.primitives.kdf.argon2", "qrcode", "pyte")
-SESSION_LOG_SUFFIX = "-sshx-session.log"
 USERS = (" Users: ", " Participants: ")  # The latter in logs of older versions.
-SESSION_ENDED = "Remote support session ended"
-STOP_TIMEOUT = 10  # sshx needs about 5 seconds to close the session on the server.
 APPROVAL_QUESTION_TIMEOUT = 30
-WIZARD_APPROVAL_WINDOW = 30  # Who is connected this long after taking over a session of the SmallBox wizard keeps the access.
+HANDOVER_APPROVAL_WINDOW = 30  # Who is connected this long after taking over a session with approved terminals keeps the access.
 INDICATOR_ACTIVITY = 3  # Seconds a terminal counts as active after its last output.
 MAX_DECLINES = 3  # Without anybody approved the session is useless, so it ends after this many refusals.
-IDLE_TIMEOUT = 1800  # A session nobody types in, joins, leaves or chats in is ended after this time.
 IDLE_WARNING = 300
 FONT_WIDTH_RATIO = 0.6  # Glyph advance of the monospaced console font relative to its size.
 LINE_HEIGHT_RATIO = 1.25  # Line height of the console font relative to its size.
 # Background jobs of a non-interactive shell ignore SIGINT, but sshx needs it to close the session cleanly.
 SIGINT_RESET_LAUNCHER = "import os, signal, sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.execv(sys.argv[1], sys.argv[1:])"
 
-# sshx execs --shell without arguments.
-SHELL_STUB = """#!/bin/sh
-exec /usr/bin/python3 %s shell
-"""
-GRAB_STUB = """#!/bin/sh
-exec /usr/bin/python3 %s grab "$@"
-"""
-# The shells read the login profiles like before, then our commands come first.
-SHELL_RC_TEMPLATE = """[ -f /etc/profile ] && . /etc/profile
-for profile in ~/.bash_profile ~/.bash_login ~/.profile; do
-	[ -f "$profile" ] && . "$profile" && break
-done
-PATH="%s:$PATH"
-"""
 
-
-def sshxBinary():
-	return which("sshx") or ("/usr/bin/sshx" if exists("/usr/bin/sshx") else None)
-
-
-def modulesInstalled():  # The watcher needs them, also for a session of the SmallBox wizard with sshx in RAM.
+def modulesInstalled():  # The watcher needs them, also for a session started outside of enigma2 with sshx in RAM.
 	def installed(module):
 		try:
 			return find_spec(module) is not None
@@ -87,51 +65,6 @@ def modulesInstalled():  # The watcher needs them, also for a session of the Sma
 
 def incomplete():  # The plugin package depends on sshx and these modules, somebody may have removed one anyway.
 	return not sshxBinary() or not modulesInstalled()
-
-
-def runningPid(pidFile, name):
-	pid = fileReadLine(pidFile, default="", source=MODULE_NAME)
-	if pid.isdigit() and name in fileReadLine(f"/proc/{pid}/cmdline", default="", source=MODULE_NAME):
-		return int(pid)
-	return None
-
-
-def signalPid(pid, signalNumber):
-	try:
-		kill(pid, signalNumber)
-	except OSError:
-		pass
-
-
-def terminalLogs():  # sshx kills the shell of a terminal closed in the browser, which then leaves its files behind.
-	logs = []
-	for path in glob(join(SESSION_DIR, "term-*.log")):
-		pid = basename(path)[5:-4]
-		if pid.isdigit() and exists(f"/proc/{pid}"):
-			logs.append(path)
-			continue
-		for extension in (".log", ".size", ".request", ".denied", ".inject"):
-			try:
-				remove(f"{path[:-4]}{extension}")
-			except OSError:
-				pass
-	return logs
-
-
-def hangupShells():  # sshx only exits once all shells are gone.
-	for path in terminalLogs():
-		pid = basename(path)[5:-4]
-		if pid.isdigit():
-			signalPid(int(pid), SIGHUP)
-
-
-def participants():  # [(uid, name, name is final)] of everybody except the receiver.
-	result = []
-	for line in fileReadLines(CONNECTED_FILE, default=[], source=MODULE_NAME):
-		fields = line.split("\t")
-		if len(fields) == 3:
-			result.append((fields[0], fields[1], fields[2] == "1"))
-	return result
 
 
 def withdrawQuestion(callback):  # Closes a question on the TV without answering it, or removes it from the queue.
@@ -180,7 +113,7 @@ class SshxSession:
 		self.declinedUids = set()  # Not approved before anybody was, asked again on a new terminal.
 		self.declinedRequests = set()
 		self.declines = 0
-		self.wizardApproved = 0
+		self.handoverApproved = 0
 		self.idleWarned = False
 		self.indicator = None
 		self.ownScreens = set()
@@ -188,6 +121,34 @@ class SshxSession:
 		self.startTime = 0
 		self.monitorTimer = eTimer()
 		self.monitorTimer.callback.append(self.monitor)
+		self.socket = None
+		self.notifier = None
+
+	def listen(self):  # remotesupport announces a session started while enigma2 runs and asks to end it.
+		try:
+			if exists(NOTIFY_SOCKET):  # Left by an enigma2 that did not end cleanly.
+				remove(NOTIFY_SOCKET)
+			self.socket = socket(AF_UNIX, SOCK_DGRAM)
+			self.socket.setblocking(False)
+			self.socket.bind(NOTIFY_SOCKET)
+			chmod(NOTIFY_SOCKET, 0o600)
+		except OSError as err:
+			print(f"[{MODULE_NAME}] Error {err.errno}: Unable to listen on '{NOTIFY_SOCKET}'!  ({err.strerror})")
+			return
+		self.notifier = eSocketNotifier(self.socket.fileno(), POLLIN)
+		self.notifier.callback.append(self.notified)
+
+	def notified(self, what):
+		while True:
+			try:
+				message = self.socket.recv(4096).decode("utf-8", "replace")
+			except OSError:  # Nothing more to read.
+				return
+			command, separator, argument = message.partition(" ")
+			if command == "handover" and not self.isActive() and exists(HANDOVER_FILE) and self.sshxPid():
+				self.adopt(self.session)
+			elif command == "stop" and self.state == self.STATE_RUNNING:
+				self.stop(argument or "Session stopped on the command line")
 
 	def isActive(self):
 		return self.state in (self.STATE_STARTING, self.STATE_RUNNING, self.STATE_STOPPING)
@@ -201,7 +162,7 @@ class SshxSession:
 	def sshxPid(self):
 		return runningPid(SSHX_PID_FILE, "sshx")
 
-	def adopt(self, session):  # Takes over a session that survived a restart of enigma2 or was started before, e.g. by the SmallBox wizard.
+	def adopt(self, session):  # Takes over a session that survived a restart of enigma2 or was started outside of it, by the SmallBox wizard or the command line.
 		self.session = session
 		if self.sshxPid():
 			self.logPath = fileReadLine(LOG_PATH_FILE, default="", source=MODULE_NAME) or None
@@ -209,15 +170,17 @@ class SshxSession:
 			if not self.logPath:
 				self.logPath = self.newLogPath()
 				fileWriteLine(LOG_PATH_FILE, self.logPath, source=MODULE_NAME)
-			if exists(WIZARD_FILE):
-				if fileReadLine(WIZARD_FILE, default="", source=MODULE_NAME) == "approved":
-					self.wizardApproved = time()
-				remove(WIZARD_FILE)
-				self.logEvent("Session taken over from the SmallBox wizard")
+			if exists(HANDOVER_FILE):
+				lines = fileReadLines(HANDOVER_FILE, default=[], source=MODULE_NAME) + ["", ""]
+				origin = lines[0]
+				if lines[1] == "approved":
+					self.handoverApproved = time()
+				remove(HANDOVER_FILE)
+				self.logEvent(f"Session taken over from the {origin}" if origin else "Session taken over")
 			else:
 				self.logEvent("Session taken over after a restart of the GUI")
 			try:  # New terminals wait for the approval of the participants in enigma2.
-				self.prepareShell()
+				prepareShell()
 			except OSError as err:
 				print(f"[{MODULE_NAME}] Error {err.errno}: Unable to prepare the support shell!  ({err.strerror})")
 			if not exists(ACTIVITY_FILE):
@@ -241,7 +204,7 @@ class SshxSession:
 		self.logPath = self.newLogPath()
 		try:
 			makedirs(SESSION_DIR, mode=0o700, exist_ok=True)
-			self.prepareShell()
+			prepareShell()
 		except OSError as err:
 			print(f"[{MODULE_NAME}] Error {err.errno}: Unable to prepare the support session!  ({err.strerror})")
 			self.setState(self.STATE_ERROR, err.strerror)
@@ -261,17 +224,6 @@ class SshxSession:
 		logDir = config.crash.debug_path.value
 		makedirs(logDir, mode=0o755, exist_ok=True)
 		return join(logDir, f"{strftime('%Y%m%d_%H%M%S')}{SESSION_LOG_SUFFIX}")
-
-	def prepareShell(self):  # The shell sshx starts for every terminal and the commands of the support shells.
-		with open(SHELL_WRAPPER, "w") as fd:
-			fd.write(SHELL_STUB % quote(RemoteSupportTools.__file__))
-		chmod(SHELL_WRAPPER, 0o700)
-		makedirs(BIN_DIR, mode=0o700, exist_ok=True)
-		with open(join(BIN_DIR, "grab"), "w") as fd:
-			fd.write(GRAB_STUB % quote(RemoteSupportTools.__file__))
-		chmod(join(BIN_DIR, "grab"), 0o700)
-		with open(SHELL_RC, "w") as fd:
-			fd.write(SHELL_RC_TEMPLATE % BIN_DIR)
 
 	def stop(self, reason="Session stopped by the user"):
 		if self.state in (self.STATE_STARTING, self.STATE_RUNNING):
@@ -328,7 +280,7 @@ class SshxSession:
 		self.declinedUids = set()
 		self.declinedRequests = set()
 		self.declines = 0
-		self.wizardApproved = 0
+		self.handoverApproved = 0
 		self.idleWarned = False
 		if error:
 			self.setState(self.STATE_ERROR, errors[-1] if errors else reason)
@@ -354,14 +306,15 @@ class SshxSession:
 			signalPid(pid, SIGTERM)
 
 	def checkParticipants(self):  # Everybody who joins has to be approved, meanwhile the session is read-only.
-		if self.wizardApproved:  # The terminals were approved in the wizard, the participants there keep the access.
+		if self.handoverApproved:  # The terminals were approved before the takeover, the participants there keep the access.
 			connected = participants()
-			if connected or time() - self.wizardApproved > WIZARD_APPROVAL_WINDOW:
-				self.wizardApproved = 0
+			if connected or time() - self.handoverApproved > HANDOVER_APPROVAL_WINDOW:
+				self.handoverApproved = 0
 				if connected:
+					approvedUids = self.approvedUids() | {uid for uid, name, final in connected}
 					with open(APPROVED_FILE, "w") as fd:
-						fd.write("".join(f"{uid}\n" for uid, name, final in connected))
-					self.logEvent(f"Access for {', '.join(name for uid, name, final in connected)} approved in the SmallBox wizard")
+						fd.write("".join(f"{uid}\n" for uid in sorted(approvedUids)))
+					self.logEvent(f"Access for {', '.join(name for uid, name, final in connected)} kept from before the takeover")
 		approvedUids = self.approvedUids()
 		waiting = [(uid, name, final) for uid, name, final in participants() if uid not in approvedUids]
 		if waiting and not exists(LOCK_FILE):
@@ -593,6 +546,7 @@ def title():
 def sessionStart(reason, session=None, **kwargs):
 	if session:
 		sshxSession.adopt(session)
+		sshxSession.listen()
 		try:  # OpenWebif offers the pages of plugins in its menu, it starts after all other plugins.
 			from Plugins.Extensions.WebInterface.WebChilds.Toplevel import addExternalChild
 		except ImportError:
@@ -947,8 +901,8 @@ class RemoteSupportLogs(Screen):
 	def loadLogs(self, selectedPath=None):
 		logs = []
 		self.names = {}  # For the questions, without the additions of the list.
-		for stamp, participants, path, running in sessionLogs():
-			text = f"{stamp} ({participants})" if participants else stamp
+		for stamp, users, path, running in sessionLogs():
+			text = f"{stamp} ({users})" if users else stamp
 			self.names[path] = text
 			grabs = len(sessionGrabs(path))
 			if grabs:

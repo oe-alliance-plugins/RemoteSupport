@@ -13,27 +13,34 @@
 #   grab     The grab command of the support shells. Without a filename the grab is shown as an image
 #            in the terminal (the web clients of sshx support inline images) and saved next to the
 #            session log, otherwise /usr/bin/grab runs as usual.
+#   console  remotesupport, a session started on the command line, e.g. when enigma2 does not start.
+#            The terminals are approved there. enigma2 takes the session over when it starts.
 #
 # Typing in a terminal, joins, leaves and chat touch ACTIVITY_FILE, so enigma2 can end a forgotten session.
 
+from argparse import ArgumentParser
 from base64 import b64decode, b64encode
 from codecs import getincrementaldecoder
 from fcntl import ioctl
 from glob import glob
-from os import O_APPEND, O_CREAT, O_WRONLY, X_OK, access, close, environ, execv, fstat, ftruncate, getpid, kill, open as osOpen, read, remove, rename, utime, write
+from importlib.util import find_spec
+from os import O_APPEND, O_CREAT, O_WRONLY, X_OK, access, chmod, close, environ, execv, fstat, ftruncate, getpid, kill, makedirs, open as osOpen, read, remove, rename, stat, utime, write
 from os.path import basename, dirname, exists, join
 from pty import fork
 from re import compile
 from select import select
-from signal import SIGHUP, SIGINT, SIGTERM, SIGWINCH, signal
-from socket import gethostname
-from subprocess import run
-from sys import argv, stdout
-from termios import TCSAFLUSH, TIOCGWINSZ, TIOCSWINSZ, tcgetattr, tcsetattr
+from shlex import quote
+from shutil import rmtree, which
+from signal import SIG_DFL, SIGHUP, SIGINT, SIGTERM, SIGWINCH, signal
+from socket import AF_UNIX, SOCK_DGRAM, gethostname, socket
+from subprocess import DEVNULL, STDOUT, Popen, run
+from sys import argv, stdin, stdout
+from termios import TCIFLUSH, TCSAFLUSH, TIOCGWINSZ, TIOCSWINSZ, tcflush, tcgetattr, tcsetattr
 from time import sleep, strftime, time
 from tty import setraw
 
 SESSION_DIR = "/tmp/remotesupport"
+NOTIFY_SOCKET = "/var/run/remotesupport.socket"  # enigma2 receives "handover" and "stop <reason>" from the command line. Outside of SESSION_DIR, which is removed with every session.
 SHELL_WRAPPER = join(SESSION_DIR, "shell")
 SSHX_PID_FILE = join(SESSION_DIR, "sshx.pid")
 SSHX_OUTPUT_FILE = join(SESSION_DIR, "sshx.out")
@@ -44,7 +51,7 @@ LOG_PATH_FILE = join(SESSION_DIR, "logpath")
 APPROVED_FILE = join(SESSION_DIR, "approved")  # The uids of the approved participants.
 LOCK_FILE = join(SESSION_DIR, "locked")  # Somebody waits for the approval, the session is read-only.
 LINK_FILE = join(SESSION_DIR, "link")
-WIZARD_FILE = join(SESSION_DIR, "wizard")  # The SmallBox wizard handed the session over, "approved" if it approved terminals.
+HANDOVER_FILE = join(SESSION_DIR, "handover")  # Who started the session outside of enigma2, "approved" in the second line if terminals were approved there.
 CONNECTED_FILE = join(SESSION_DIR, "connected")  # uid, name and whether the name is final, per participant.
 ACTIVITY_FILE = join(SESSION_DIR, "activity")
 CHAT_FILE = join(SESSION_DIR, "chat")  # A message enigma2 wants to send to the participants.
@@ -53,6 +60,13 @@ GRABBED_FILE = join(SESSION_DIR, "grabbed")  # A grab enigma2 announces on the T
 BIN_DIR = join(SESSION_DIR, "bin")  # Commands of the support shells, first in PATH.
 SHELL_RC = join(SESSION_DIR, "shellrc")
 GRAB = "/usr/bin/grab"
+SESSION_LOG_SUFFIX = "-sshx-session.log"
+SESSION_ENDED = "Remote support session ended"
+ENIGMA_INFO = "/usr/lib/enigma.info"
+ENIGMA_SETTINGS = "/etc/enigma2/settings"
+CONSOLE_ORIGIN = "command line"
+WATCHER_MODULES = ("websocket", "cbor2", "cryptography.hazmat.primitives.kdf.argon2")
+LINK = compile(r"https?://\S+")
 GRAB_SUFFIX = "-sshx-grab-"
 IMAGE_START = b"\x1b]1337;File="  # Inline image of the iTerm2 protocol.
 BASH = "/bin/bash"
@@ -62,12 +76,32 @@ TERMINAL = compile(r".*/term-(\d+)")
 TERMINAL_LOG_LIMIT = 262144
 
 APPROVAL_TIMEOUT = 60  # Longer than the question on the TV, which may wait behind other notifications.
+TERMINAL_QUESTION_TIMEOUT = 30  # The questions of the command line, like on the TV.
+STOP_QUESTION_TIMEOUT = 15
+START_TIMEOUT = 30
+STOP_TIMEOUT = 10  # sshx needs about 5 seconds to close the session on the server.
+IDLE_TIMEOUT = 1800  # A session nobody types in, joins, leaves or chats in is ended after this time.
 ESCAPES = compile(r"\x1b(\[[0-?]*[ -/]*[@-~]|\][^\x07\x1b]*(\x07|\x1b\\)?|[()*+].|[=>78DEHMNOc])")
 SALT = b"This is a non-random salt for sshx.io, since we want to stretch the security of 83-bit keys!"
 PING_INTERVAL = 15
 JOIN_DELAY = 5  # The server names new users "User <n>" until their browser sets the chosen name.
 ACTIVITY_INTERVAL = 10
 DEFAULT_NAME = compile(r"^User \d+$")
+
+# sshx execs --shell without arguments.
+SHELL_STUB = """#!/bin/sh
+exec /usr/bin/python3 %s shell
+"""
+GRAB_STUB = """#!/bin/sh
+exec /usr/bin/python3 %s grab "$@"
+"""
+# The shells read the login profiles like before, then our commands come first.
+SHELL_RC_TEMPLATE = """[ -f /etc/profile ] && . /etc/profile
+for profile in ~/.bash_profile ~/.bash_login ~/.profile; do
+	[ -f "$profile" ] && . "$profile" && break
+done
+PATH="%s:$PATH"
+"""
 
 
 class RemoteSupportShell:
@@ -105,6 +139,7 @@ class RemoteSupportShell:
 				pass
 
 	def waitForApproval(self):
+		approvedTerminal = f"{self.base}.approved"  # Approved on its own, by the command line.
 		if approved():
 			self.logLine("Access already approved")
 			return True
@@ -115,7 +150,7 @@ class RemoteSupportShell:
 		try:
 			end = time() + APPROVAL_TIMEOUT
 			while time() < end:
-				if approved():
+				if approved() or exists(approvedTerminal):
 					self.show("Access approved.")
 					return True
 				if exists(denied):
@@ -126,7 +161,7 @@ class RemoteSupportShell:
 			self.show("No approval received.")
 			return False
 		finally:
-			for path in (request, denied):
+			for path in (request, approvedTerminal, denied):
 				try:
 					remove(path)
 				except OSError:
@@ -543,6 +578,371 @@ def writeAll(fd, data):
 		data = data[write(fd, data):]
 
 
+def sshxBinary():
+	return which("sshx") or ("/usr/bin/sshx" if exists("/usr/bin/sshx") else None)
+
+
+def runningPid(pidFile, name):
+	pid = readFile(pidFile)
+	if pid.isdigit() and name in readFile(f"/proc/{pid}/cmdline"):
+		return int(pid)
+	return None
+
+
+def signalPid(pid, signalNumber):
+	try:
+		kill(pid, signalNumber)
+	except OSError:
+		pass
+
+
+def terminalLogs():  # sshx kills the shell of a terminal closed in the browser, which then leaves its files behind.
+	logs = []
+	for path in glob(join(SESSION_DIR, "term-*.log")):
+		pid = basename(path)[5:-4]
+		if pid.isdigit() and exists(f"/proc/{pid}"):
+			logs.append(path)
+			continue
+		for extension in (".log", ".size", ".request", ".approved", ".denied", ".inject"):
+			try:
+				remove(f"{path[:-4]}{extension}")
+			except OSError:
+				pass
+	return logs
+
+
+def hangupShells():  # sshx only exits once all shells are gone.
+	for path in terminalLogs():
+		pid = basename(path)[5:-4]
+		if pid.isdigit():
+			signalPid(int(pid), SIGHUP)
+
+
+def prepareShell():  # The shell sshx starts for every terminal and the commands of the support shells.
+	with open(SHELL_WRAPPER, "w") as fd:
+		fd.write(SHELL_STUB % quote(__file__))
+	chmod(SHELL_WRAPPER, 0o700)
+	makedirs(BIN_DIR, mode=0o700, exist_ok=True)
+	with open(join(BIN_DIR, "grab"), "w") as fd:
+		fd.write(GRAB_STUB % quote(__file__))
+	chmod(join(BIN_DIR, "grab"), 0o700)
+	with open(SHELL_RC, "w") as fd:
+		fd.write(SHELL_RC_TEMPLATE % BIN_DIR)
+
+
+def writeText(path, text):
+	with open(path, "w") as fd:
+		fd.write(f"{text}\n")
+	chmod(path, 0o600)
+
+
+def participants():  # [(uid, name, name is final)] of everybody except the receiver.
+	result = []
+	for line in readFile(CONNECTED_FILE).splitlines():
+		fields = line.split("\t")
+		if len(fields) == 3:
+			result.append((fields[0], fields[1], fields[2] == "1"))
+	return result
+
+
+def watcherModules():
+	try:
+		return all(find_spec(module) for module in WATCHER_MODULES)
+	except ImportError:
+		return False
+
+
+def notifyEnigma(message):  # False when enigma2 does not listen.
+	try:
+		with socket(AF_UNIX, SOCK_DGRAM) as sock:
+			sock.sendto(message.encode("utf-8"), NOTIFY_SOCKET)
+		return True
+	except OSError:
+		return False
+
+
+def enigmaRunning():
+	return any(readFile(path) == "enigma2" for path in glob("/proc/[0-9]*/comm"))
+
+
+def boxInfo():
+	info = {}
+	for line in readFile(ENIGMA_INFO).splitlines():
+		key, separator, value = line.partition("=")
+		if separator:
+			info[key.strip()] = value.strip().strip("'\"")
+	return info
+
+
+def sessionLogDir():  # Where enigma2 writes its logs, the plugin lists the session logs there.
+	for line in readFile(ENIGMA_SETTINGS).splitlines():
+		if line.startswith("config.crash.debug_path="):
+			return line.split("=", 1)[1]
+	return "/home/root/logs/"
+
+
+class RemoteSupportConsole:  # remotesupport: a session without enigma2, e.g. when the GUI does not start. enigma2 takes it over when it starts.
+	def __init__(self, approve):
+		self.approve = approve  # None: every terminal is approved here, "all" or the name of the participant to approve.
+		self.sessionLog = readFile(LOG_PATH_FILE)
+		self.interactive = stdin.isatty()
+		self.declinedUids = set()
+		self.announced = set()
+		self.stopped = False
+
+	def logEvent(self, text):
+		appendLog(self.sessionLog, f"{strftime('%Y-%m-%d %H:%M:%S')} {text}")
+
+	def start(self):
+		if runningPid(SSHX_PID_FILE, "sshx"):
+			print("The remote support session is already running.")
+			return self.attach()
+		enigma = enigmaRunning()  # Then enigma2 takes the session over at once and asks on the TV.
+		if enigma and self.approve:
+			print("enigma2 is running, the access is approved on the TV, --approve is not used.")
+			self.approve = None
+		if not self.approve and not self.interactive and not enigma:
+			print("Nobody can answer the approvals here, use --approve.")
+			return 1
+		binary = sshxBinary()
+		if not binary:
+			print("sshx is not installed.")
+			return 1
+		if self.approve and self.approve != "all" and not watcherModules():
+			print("--approve with a name needs the Python modules of the watcher to see who joins.")
+			return 1
+		hangupShells()
+		pid = runningPid(WATCHER_PID_FILE, "RemoteSupport")
+		if pid:
+			signalPid(pid, SIGTERM)
+		rmtree(SESSION_DIR, ignore_errors=True)
+		makedirs(SESSION_DIR, mode=0o700, exist_ok=True)
+		prepareShell()
+		logDir = sessionLogDir()
+		makedirs(logDir, mode=0o755, exist_ok=True)
+		self.sessionLog = join(logDir, f"{strftime('%Y%m%d_%H%M%S')}{SESSION_LOG_SUFFIX}")
+		writeText(LOG_PATH_FILE, self.sessionLog)
+		if self.approve == "all":
+			writeText(APPROVED_FILE, "")
+		info = boxInfo()
+		name = f"{info.get('displaybrand', '')} {info.get('displaymodel', '')} ({gethostname()})".strip()
+		self.logEvent(f"Remote support session started on {name} ({CONSOLE_ORIGIN})")
+		print("Starting the remote support session...")
+		home = "/home/root" if exists("/home/root") else "/"
+		with open(SSHX_OUTPUT_FILE, "w") as output, open(SSHX_ERROR_FILE, "w") as error:
+			process = Popen([binary, "--quiet", "--shell", SHELL_WRAPPER, "--name", name], cwd=home, stdin=DEVNULL, stdout=output, stderr=error, start_new_session=True, preexec_fn=lambda: signal(SIGINT, SIG_DFL))  # sshx closes the session on SIGINT.
+		writeText(SSHX_PID_FILE, process.pid)
+		link = None
+		end = time() + START_TIMEOUT
+		while not link and time() < end and process.poll() is None:
+			sleep(0.5)
+			match = LINK.search(readFile(SSHX_OUTPUT_FILE))
+			link = match and match.group(0)
+		if not link:
+			errors = readFile(SSHX_ERROR_FILE).splitlines()
+			reason = f"unable to start sshx ({errors[-1]})" if errors else "the sshx server did not answer"
+			if process.poll() is None:
+				process.terminate()
+			print(f"The session could not be started: {reason}")
+			self.cleanup(reason)
+			return 1
+		writeText(LINK_FILE, link)
+		self.logEvent(f"Session link: {link.split('#')[0]}")  # Without the encryption key.
+		touchActivity()
+		if watcherModules():  # Logs who joins and lets enigma2 know them after the takeover.
+			with open(WATCHER_OUTPUT_FILE, "w") as output:
+				watcher = Popen(["/usr/bin/python3", __file__, "watcher", f"{gethostname()} ({info.get('imageversion', '')})"], stdin=DEVNULL, stdout=output, stderr=STDOUT, start_new_session=True)
+			writeText(WATCHER_PID_FILE, watcher.pid)
+		writeText(HANDOVER_FILE, f"{CONSOLE_ORIGIN}\napproved" if self.approve == "all" else CONSOLE_ORIGIN)  # Every terminal is approved, enigma2 keeps the access of who is connected.
+		notifyEnigma("handover")  # Without enigma2 it takes the session over when it starts.
+		return self.attach()
+
+	def attach(self):
+		self.sessionLog = readFile(LOG_PATH_FILE)
+		link = readFile(LINK_FILE)
+		print(f"\nSend this link to your supporter or let them scan the QR code:\n\n{link}\n")
+		try:
+			from qrcode import QRCode, constants  # Not at module level as the package may be missing.
+			qrCode = QRCode(error_correction=constants.ERROR_CORRECT_L, border=1)  # Small for the terminal, a screen needs no more error correction.
+			qrCode.add_data(link)
+			qrCode.make(fit=True)
+			qrCode.print_ascii(out=stdout, invert=True)
+		except ImportError:
+			pass
+		print("Do not post the link or a screenshot of it in public forums: everybody who has it can try to join.\n")
+		if enigmaRunning():
+			print("enigma2 manages the session, the access is approved on the TV. 'remotesupport stop' ends it.")
+			return 0
+		if self.approve == "all":
+			print("Every terminal is approved automatically.")
+		elif self.approve:
+			print(f"'{self.approve}' is approved automatically, everybody else is asked here.")
+		else:
+			print("Every terminal of the supporter must be approved here.")
+		print("When enigma2 starts, it takes the session over. Ctrl+C leaves or ends the session.\n")
+		try:
+			return self.run()
+		except KeyboardInterrupt:
+			print()
+			if self.interactive and self.ask("Do you want to end the session?", STOP_QUESTION_TIMEOUT):
+				return self.stop("Session stopped on the command line")
+			print("The session keeps running. 'remotesupport' answers the approvals again, 'remotesupport stop' ends it.")
+			return 0
+
+	def run(self):
+		while not self.stopped:
+			if not runningPid(SSHX_PID_FILE, "sshx"):
+				if exists(SESSION_DIR):
+					self.cleanup("sshx exited unexpectedly")
+				print("The session ended.")
+				return 1
+			if enigmaRunning():
+				print("enigma2 took the session over, it asks for the approvals now.")
+				return 0
+			if self.approve and self.approve != "all":
+				self.checkParticipants()
+			elif not self.approve:
+				self.checkTerminals()
+			self.checkIdle()
+			sleep(0.5)
+		return 0  # Ended here after a refusal or without activity.
+
+	def ask(self, question, timeout, stillOpen=None):  # A line with y or yes allows, no answer in time does not.
+		tcflush(stdin, TCIFLUSH)  # Nothing typed before the question answers it.
+		print(f"{question} [y/N] ({timeout} s) ", end="", flush=True)
+		end = time() + timeout
+		while time() < end and (stillOpen is None or stillOpen()):
+			if select([stdin], [], [], 0.5)[0]:
+				return stdin.readline().strip().lower() in ("y", "yes", "j", "ja")
+		print("no answer")
+		return False
+
+	def checkTerminals(self):  # Like the SmallBox wizard: without knowing who joined, every terminal is approved on its own.
+		for request in sorted(glob(join(SESSION_DIR, "term-*.request"))):
+			base = request[:-8]
+			if approved() or exists(f"{base}.approved") or exists(f"{base}.denied"):
+				continue
+			terminal = basename(base)[5:]
+			allow = self.ask(f"Allow terminal T{terminal} of the supporter (full root access)?", TERMINAL_QUESTION_TIMEOUT, lambda: exists(request))
+			if exists(request):
+				writeText(f"{base}.{'approved' if allow else 'denied'}", "1")
+				self.logEvent(f"Access for terminal T{terminal} {'approved' if allow else 'not approved'} on the command line")
+				if allow:  # enigma2 keeps the access of who is connected when it takes the session over.
+					writeText(HANDOVER_FILE, f"{CONSOLE_ORIGIN}\napproved")
+
+	def checkParticipants(self):  # Like the plugin: everybody has to be approved, meanwhile the session is read-only.
+		approvedUids = set(readFile(APPROVED_FILE).split())
+		named = [(uid, name) for uid, name, final in participants() if final and name == self.approve and uid not in approvedUids]
+		if named:
+			approvedUids |= {uid for uid, name in named}
+			self.writeApproved(approvedUids)
+			self.logEvent(f"Access for {self.approve} approved automatically on the command line")
+		waiting = [(uid, name, final) for uid, name, final in participants() if uid not in approvedUids]
+		if waiting and not exists(LOCK_FILE):
+			writeText(LOCK_FILE, "1")
+		elif not waiting and exists(LOCK_FILE):
+			remove(LOCK_FILE)
+		asked = [(uid, name) for uid, name, final in waiting if final and uid not in self.declinedUids]  # The browser sets the name a few seconds after joining.
+		if not asked:
+			return
+		askedUids = {uid for uid, name in asked}
+		names = ", ".join(name for uid, name in asked)
+		if not self.interactive:
+			if askedUids - self.announced:
+				self.announced |= askedUids
+				self.logEvent(f"Waiting for the approval of {names}")
+			return
+		self.logEvent(f"Waiting for the approval of {names}")
+
+		def stillWaiting():
+			return askedUids <= {uid for uid, name, final in participants()} - set(readFile(APPROVED_FILE).split())
+
+		if self.ask(f"'{names}' joined the support session. Do you want to allow the access?", TERMINAL_QUESTION_TIMEOUT, stillWaiting):
+			self.writeApproved(set(readFile(APPROVED_FILE).split()) | askedUids)
+			touchActivity()
+			self.logEvent(f"Access for {names} approved on the command line")
+		elif approvedUids:  # sshx can not remove a single participant.
+			self.stop(f"Session stopped as the access for {names} was not approved on the command line")
+		else:
+			self.declinedUids |= askedUids
+			for request in glob(join(SESSION_DIR, "term-*.request")):
+				writeText(f"{request[:-8]}.denied", "1")
+			self.logEvent(f"Access for {names} not approved on the command line")
+
+	def writeApproved(self, uids):
+		writeText(APPROVED_FILE, "\n".join(sorted(uids)))
+
+	def checkIdle(self):  # Nobody ends a forgotten session without enigma2.
+		try:
+			idle = time() - stat(ACTIVITY_FILE).st_mtime
+		except OSError:
+			return
+		if idle >= IDLE_TIMEOUT:
+			self.stop(f"Session stopped as nobody used it for {IDLE_TIMEOUT // 60} minutes")
+
+	def stop(self, reason):
+		pid = runningPid(SSHX_PID_FILE, "sshx")
+		if not pid:
+			print("No remote support session is running.")
+			return 1
+		print("Ending the session...")
+		if enigmaRunning() and notifyEnigma(f"stop {reason}"):  # enigma2 ends it like in the plugin.
+			end = time() + STOP_TIMEOUT + 5
+			while exists(SESSION_DIR) and time() < end:  # Removed when enigma2 finished.
+				sleep(0.25)
+			if exists(SESSION_DIR):
+				print("enigma2 did not end the session.")
+				return 1
+			self.stopped = True
+			print("The session ended.")
+			return 0
+		self.sessionLog = readFile(LOG_PATH_FILE)
+		self.logEvent(reason)
+		hangupShells()
+		signalPid(pid, SIGINT)  # Lets sshx close the session on the server.
+		end = time() + STOP_TIMEOUT
+		while runningPid(SSHX_PID_FILE, "sshx") and time() < end:
+			sleep(0.25)
+		if runningPid(SSHX_PID_FILE, "sshx"):
+			signalPid(pid, SIGTERM)  # sshx did not close the session in time.
+		self.cleanup()
+		self.stopped = True
+		print("The session ended.")
+		return 0
+
+	def cleanup(self, reason=None):
+		pid = runningPid(WATCHER_PID_FILE, "RemoteSupport")
+		if pid:
+			signalPid(pid, SIGTERM)
+		rmtree(SESSION_DIR, ignore_errors=True)
+		self.logEvent(f"{SESSION_ENDED}: {reason}" if reason else SESSION_ENDED)
+
+	def status(self):
+		if not runningPid(SSHX_PID_FILE, "sshx"):
+			print("No remote support session is running.")
+			return 1
+		terminals = [path for path in terminalLogs() if not exists(f"{path[:-4]}.request")]
+		print(f"Link: {readFile(LINK_FILE)}")
+		print(f"Managed by: {'enigma2' if enigmaRunning() else 'the command line'}")
+		print(f"Connected: {', '.join(name for uid, name, final in participants()) or '-'}")
+		print(f"Open terminals: {len(terminals)}")
+		return 0
+
+
+def console(args):
+	parser = ArgumentParser(prog="remotesupport", description="Remote support with sshx, also when enigma2 does not start. enigma2 takes the session over when it starts.")
+	parser.add_argument("command", nargs="?", default="start", choices=("start", "status", "stop"))
+	parser.add_argument("--approve", metavar="NAME", help="approves the participant with this name automatically, 'all' approves every terminal. The participants choose their names themselves, only the link keeps others out.")
+	options = parser.parse_args(args)
+	stdout.reconfigure(line_buffering=True)  # Also into a file, the questions wait for an answer.
+	session = RemoteSupportConsole(options.approve)
+	if options.command == "status":
+		return session.status()
+	if options.command == "stop":
+		return session.stop("Session stopped on the command line")
+	return session.start()
+
+
 class Terminated(Exception):
 	pass
 
@@ -556,6 +956,8 @@ if __name__ == "__main__":
 		RemoteSupportShell().run()
 	elif argv[1:2] == ["grab"]:
 		grabCommand(argv[2:])
+	elif argv[1:2] == ["console"]:
+		raise SystemExit(console(argv[2:]))
 	elif argv[1:2] == ["watcher"]:
 		for signalNumber in (SIGHUP, SIGINT, SIGTERM):
 			signal(signalNumber, terminate)

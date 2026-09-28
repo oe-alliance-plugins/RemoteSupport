@@ -1,0 +1,3 @@
+#!/bin/sh
+# Remote support without enigma2, e.g. when the GUI does not start, see RemoteSupport.py.
+exec /usr/bin/python3 /usr/lib/enigma2/python/Plugins/SystemPlugins/RemoteSupport/RemoteSupport.pyc console "$@"
