@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+The QR code of RemoteSupport leads here: link.html#<language>,<distribution>,<receiver>,<sshx link>
+The distribution and the receiver are URL encoded, the link starts at the first part with http.
+The fragment never reaches the server, so the link with its key stays on the phone.
+Older plugin versions call the current page, keep the format.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Remote Support</title>
+<style>
+body { margin: 0; padding: 16px; font: 17px/1.45 sans-serif; color-scheme: light dark; max-width: 560px; margin-inline: auto; }
+h1 { font-size: 22px; margin: 0 0 12px; }
+.link { padding: 12px; border: 1px solid rgba(128, 128, 128, .5); border-radius: 8px; word-break: break-all; user-select: all; font-family: monospace; font-size: 15px; }
+.buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.buttons a, .buttons button { display: block; padding: 14px 8px; border: 0; border-radius: 8px; font: inherit; font-weight: bold; text-align: center; text-decoration: none; color: #fff; background: #555; cursor: pointer; }
+.buttons .share { grid-column: 1 / -1; background: #1565c0; }
+.buttons .discord { background: #5865f2; }
+.buttons .whatsapp { background: #1f8f4e; }
+.buttons .telegram { background: #2481cc; }
+.hint { color: #888; font-size: 15px; }
+.warning { color: #c62828; font-size: 15px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<h1 id="title">Remote Support</h1>
+<div id="session" hidden>
+<p data-text="send"></p>
+<div class="link" id="link"></div>
+<div class="buttons">
+<button class="share" id="share" data-text="share" hidden></button>
+<button class="discord" id="discord">Discord</button>
+<a class="telegram" id="telegram">Telegram</a>
+<a class="whatsapp" id="whatsapp">WhatsApp</a>
+<a id="sms">SMS</a>
+<a id="mail" data-text="mail"></a>
+<button id="copy" data-text="copy"></button>
+</div>
+<p class="hint" data-text="doNotOpen"></p>
+<p class="warning" data-text="warning"></p>
+</div>
+<p id="missing" data-text="missing" hidden></p>
+<script>
+const TEXTS = {
+	en: {
+		title: "Remote Support",
+		titleDistro: "Remote Support for {distro}",
+		send: "Send this link to your supporter:",
+		intro: "Here is the link to the support session of my {receiver}:",
+		receiver: "receiver",
+		share: "Share",
+		mail: "E-mail",
+		copy: "Copy",
+		copied: "Copied",
+		pasteDiscord: "Copied, paste it in Discord",
+		doNotOpen: "Do not open the link yourself, you would join the session as a new user.",
+		warning: "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access.",
+		missing: "The link is incomplete. Scan the QR code on the TV again."
+	},
+	de: {
+		title: "Remote Support",
+		titleDistro: "Remote Support für {distro}",
+		send: "Schick diesen Link an deinen Supporter:",
+		intro: "Hier ist der Link zur Support-Session meines {receiver}:",
+		receiver: "Receivers",
+		share: "Teilen",
+		mail: "E-Mail",
+		copy: "Kopieren",
+		copied: "Kopiert",
+		pasteDiscord: "Kopiert, in Discord einfügen",
+		doNotOpen: "Öffne den Link nicht selbst, sonst trittst du der Session als neuer Benutzer bei.",
+		warning: "Poste den Link oder einen Screenshot davon nicht in öffentlichen Foren: Jeder, der den Link kennt, kann versuchen dieser Session beizutreten.",
+		missing: "Der Link ist unvollständig. Scanne den QR-Code auf dem Fernseher erneut."
+	}
+};
+function decode(text) {  // Scanners may encode the fragment.
+	try {
+		return decodeURIComponent(text);
+	} catch (error) {
+		return text;
+	}
+}
+window.addEventListener("hashchange", () => location.reload());  // A new QR code may open in the same tab.
+const parts = location.hash.slice(1).split(",");
+const language = decode(parts[0]).toLowerCase();
+const start = parts.findIndex((part, index) => index > 0 && /^http/i.test(decode(part)));
+const fields = start > 0 ? parts.slice(1, start).map(decode) : [];
+const distro = fields[0] || "";
+const receiver = fields[1] || "";
+const url = start > 0 ? decode(parts.slice(start).join(",")) : "";
+const texts = Object.assign({}, TEXTS.en, TEXTS[language] || TEXTS[language.split(/[_-]/)[0]]);  // English when there is no translation.
+document.documentElement.lang = TEXTS[language] ? language : "en";
+const title = (distro ? texts.titleDistro.replace("{distro}", distro) : texts.title) + (receiver ? ` (${receiver})` : "");
+document.title = title;
+document.getElementById("title").textContent = title;
+document.querySelectorAll("[data-text]").forEach(element => { element.textContent = texts[element.dataset.text]; });
+if (/^https:\/\/\S+$/.test(url)) {
+	const intro = texts.intro.replace("{receiver}", receiver || texts.receiver).replace(/:$/, distro ? ` (${distro}):` : ":");
+	const message = `${intro} ${url}`;
+	const encoded = encodeURIComponent(message);
+	document.getElementById("link").textContent = url;
+	document.getElementById("telegram").href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(intro)}`;
+	document.getElementById("whatsapp").href = `https://wa.me/?text=${encoded}`;
+	document.getElementById("sms").href = `sms:?&body=${encoded}`;
+	document.getElementById("mail").href = `mailto:?subject=${encodeURIComponent(title)}&body=${encoded}`;
+	const shareButton = document.getElementById("share");
+	if (navigator.share) {
+		shareButton.hidden = false;
+		shareButton.onclick = () => navigator.share({ text: message }).catch(() => {});
+	}
+	const copyMessage = done => navigator.clipboard.writeText(message).then(done, () => {});
+	document.getElementById("copy").onclick = event => copyMessage(() => { event.target.textContent = texts.copied; });
+	document.getElementById("discord").onclick = event => copyMessage(() => {  // Discord can not take a text, it is pasted there.
+		event.target.textContent = texts.pasteDiscord;
+		setTimeout(() => { location.href = "https://discord.com/channels/@me"; }, 1500);
+	});
+	document.getElementById("session").hidden = false;
+} else {
+	document.getElementById("missing").hidden = false;
+}
+</script>
+</body>
+</html>
