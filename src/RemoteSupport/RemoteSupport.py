@@ -847,7 +847,7 @@ class RemoteSupportConsole:  # remotesupport: a session without enigma2, e.g. wh
 		print("no answer")
 		return False
 
-	def checkTerminals(self):  # Like the SmallBox wizard: without knowing who joined, every terminal is approved on its own.
+	def checkTerminals(self):  # Who joins only the watcher knows, which not every image can run, so every terminal is approved on its own.
 		for request in sorted(glob(join(SESSION_DIR, "term-*.request"))):
 			base = request[:-8]
 			if approved() or exists(f"{base}.approved") or exists(f"{base}.denied"):

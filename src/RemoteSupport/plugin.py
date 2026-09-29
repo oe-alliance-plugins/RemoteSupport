@@ -163,7 +163,7 @@ class SshxSession:
 	def sshxPid(self):
 		return runningPid(SSHX_PID_FILE, "sshx")
 
-	def adopt(self, session):  # Takes over a session that survived a restart of enigma2 or was started outside of it, by the SmallBox wizard or the command line.
+	def adopt(self, session):  # Takes over a session that survived a restart of enigma2 or was started on the command line.
 		self.session = session
 		if self.sshxPid():
 			self.logPath = fileReadLine(LOG_PATH_FILE, default="", source=MODULE_NAME) or None
