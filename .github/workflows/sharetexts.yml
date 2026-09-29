@@ -1,0 +1,47 @@
+name: share page texts
+
+# Writes docs/texts.js, the translations of the share page docs/link.html, from the .po files.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "src/RemoteSupport/ShareTexts.py"
+      - "src/RemoteSupport/locale/*.po"
+      - "CI/sharetexts.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sharetexts
+
+jobs:
+  texts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install gettext
+        run: |
+          sudo apt-get -q update
+          sudo apt-get install -y gettext
+
+      - name: Write docs/texts.js
+        run: python3 CI/sharetexts.py
+
+      - name: Commit docs/texts.js
+        run: |
+          if git diff --quiet docs/texts.js; then
+            exit 0
+          fi
+          git config user.email "bot@oe-alliance.com"
+          git config user.name "oe-alliance python bot"
+          git add docs/texts.js
+          git commit -m "share page texts update"
+          for attempt in 1 2 3; do  # The buildbot may push at the same time.
+            git pull --rebase --quiet origin main && git push --quiet origin HEAD:main && exit 0
+            sleep 15
+          done
+          exit 1

@@ -666,7 +666,7 @@ def enigmaLanguage():  # Also without enigma2, the settings only hold a language
 def shareUrl(link):  # The page to send the link from the phone. The link is in the fragment, which the browser does not send to the server.
 	info = boxInfo()
 	distro, receiver = (quoteUrl(info.get(key, ""), safe="") for key in ("displaydistro", "machinebuild"))
-	return f"{SHARE_PAGE}#{enigmaLanguage()[:2]},{distro},{receiver},{link}"
+	return f"{SHARE_PAGE}#{enigmaLanguage()},{distro},{receiver},{link}"
 
 
 def printQrCode(text):

@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <!--
 The QR code of RemoteSupport leads here: link.html#<language>,<distribution>,<receiver>,<sshx link>
-The distribution and the receiver are URL encoded, the link starts at the first part with http.
+The language is the locale of enigma2 like de_DE.
+The distribution and the receiver are URL encoded.
 The fragment never reaches the server, so the link with its key stays on the phone.
 Older plugin versions call the current page, keep the format.
+The texts come from texts.js, which the workflow sharetexts.yml writes from the .po files of the plugin.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
 <title>Remote Support</title>
@@ -46,39 +48,8 @@ h1 { font-size: 22px; margin: 0 0 12px; }
 <p class="warning" data-text="warning"></p>
 </div>
 <p id="missing" data-text="missing" hidden></p>
+<script src="texts.js"></script>
 <script>
-const TEXTS = {
-	en: {
-		title: "Remote Support",
-		titleDistro: "Remote Support for {distro}",
-		send: "Send this link to your supporter:",
-		intro: "Here is the link to the support session of my {receiver}:",
-		receiver: "receiver",
-		share: "Share",
-		mail: "E-mail",
-		copy: "Copy",
-		copied: "Copied",
-		pasteDiscord: "Copied, paste it in Discord",
-		doNotOpen: "Do not open the link yourself, you would join the session as a new user.",
-		warning: "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access.",
-		missing: "The link is incomplete. Scan the QR code on the TV again."
-	},
-	de: {
-		title: "Remote Support",
-		titleDistro: "Remote Support für {distro}",
-		send: "Schick diesen Link an deinen Supporter:",
-		intro: "Hier ist der Link zur Support-Session meines {receiver}:",
-		receiver: "Receivers",
-		share: "Teilen",
-		mail: "E-Mail",
-		copy: "Kopieren",
-		copied: "Kopiert",
-		pasteDiscord: "Kopiert, in Discord einfügen",
-		doNotOpen: "Öffne den Link nicht selbst, sonst trittst du der Session als neuer Benutzer bei.",
-		warning: "Poste den Link oder einen Screenshot davon nicht in öffentlichen Foren: Jeder, der den Link kennt, kann versuchen dieser Session beizutreten.",
-		missing: "Der Link ist unvollständig. Scanne den QR-Code auf dem Fernseher erneut."
-	}
-};
 function decode(text) {  // Scanners may encode the fragment.
 	try {
 		return decodeURIComponent(text);
@@ -89,19 +60,18 @@ function decode(text) {  // Scanners may encode the fragment.
 window.addEventListener("hashchange", () => location.reload());  // A new QR code may open in the same tab.
 const parts = location.hash.slice(1).split(",");
 const language = decode(parts[0]).toLowerCase();
-const start = parts.findIndex((part, index) => index > 0 && /^http/i.test(decode(part)));
-const fields = start > 0 ? parts.slice(1, start).map(decode) : [];
-const distro = fields[0] || "";
-const receiver = fields[1] || "";
-const url = start > 0 ? decode(parts.slice(start).join(",")) : "";
-const texts = Object.assign({}, TEXTS.en, TEXTS[language] || TEXTS[language.split(/[_-]/)[0]]);  // English when there is no translation.
-document.documentElement.lang = TEXTS[language] ? language : "en";
+const [distro, receiver] = [decode(parts[1] || ""), decode(parts[2] || "")];
+const url = decode(parts.slice(3).join(","));
+const locale = language.replace("-", "_");
+const translation = [locale, locale.split("_")[0]].find(code => TEXTS[code]) || "en";
+const texts = Object.assign({}, TEXTS.en, TEXTS[translation]);  // English for what is not translated.
+document.documentElement.lang = translation.replace("_", "-");
 const title = (distro ? texts.titleDistro.replace("{distro}", distro) : texts.title) + (receiver ? ` (${receiver})` : "");
 document.title = title;
 document.getElementById("title").textContent = title;
 document.querySelectorAll("[data-text]").forEach(element => { element.textContent = texts[element.dataset.text]; });
 if (/^https:\/\/\S+$/.test(url)) {
-	const intro = texts.intro.replace("{receiver}", receiver || texts.receiver).replace(/:$/, distro ? ` (${distro}):` : ":");
+	const intro = receiver && distro ? texts.introReceiver.replace("{receiver}", receiver).replace("{distro}", distro) : texts.intro;
 	const message = `${intro} ${url}`;
 	const encoded = encodeURIComponent(message);
 	document.getElementById("link").textContent = url;

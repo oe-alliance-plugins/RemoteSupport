@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RemoteSupport\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 09:32+0200\n"
+"POT-Creation-Date: 2026-09-29 11:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -101,6 +101,18 @@ msgstr ""
 msgid "Connecting to the sshx server, please wait."
 msgstr ""
 
+#: ../ShareTexts.py:20
+msgid "Copied"
+msgstr ""
+
+#: ../ShareTexts.py:21
+msgid "Copied, paste it in Discord"
+msgstr ""
+
+#: ../ShareTexts.py:19
+msgid "Copy"
+msgstr ""
+
 #: ../plugin.py:926 ../web.py:481
 msgid "Delete"
 msgstr ""
@@ -121,7 +133,11 @@ msgstr ""
 msgid "Deny"
 msgstr ""
 
-#: ../plugin.py:817 ../web.py:460
+#: ../ShareTexts.py:22
+msgid "Do not open the link yourself, you would join the session as a new user."
+msgstr ""
+
+#: ../plugin.py:817 ../ShareTexts.py:23 ../web.py:460
 msgid "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."
 msgstr ""
 
@@ -170,6 +186,10 @@ msgstr ""
 msgid "Download"
 msgstr ""
 
+#: ../ShareTexts.py:18
+msgid "E-mail"
+msgstr ""
+
 #: ../plugin.py:745
 msgid "Exit all menus, the session continues"
 msgstr ""
@@ -184,6 +204,16 @@ msgstr ""
 
 #: ../web.py:479
 msgid "Grab OSD"
+msgstr ""
+
+#: ../ShareTexts.py:14
+msgid "Here is the link to the support session of my receiver:"
+msgstr ""
+
+#. TRANSLATORS: Keep {receiver} and {distro}, they are replaced by the receiver and its distribution, e.g. pulse4kmini and OpenATV.
+#: ../ShareTexts.py:16
+#, python-brace-format
+msgid "Here is the link to the support session of my {receiver} ({distro}):"
 msgstr ""
 
 #: ../plugin.py:812 ../web.py:458
@@ -261,12 +291,18 @@ msgstr ""
 msgid "Previous terminal / scroll back"
 msgstr ""
 
-#: ../plugin.py:544 ../web.py:442
+#: ../plugin.py:544 ../ShareTexts.py:10 ../web.py:442
 msgid "Remote Support"
 msgstr ""
 
 #: ../plugin.py:730
 msgid "Remote Support Actions"
+msgstr ""
+
+#. TRANSLATORS: Keep {distro}, it is replaced by the distribution of the receiver, e.g. OpenATV.
+#: ../ShareTexts.py:12
+#, python-brace-format
+msgid "Remote Support for {distro}"
 msgstr ""
 
 #: ../plugin.py:786 ../web.py:451
@@ -293,6 +329,10 @@ msgstr ""
 msgid "Scroll in the large terminal"
 msgstr ""
 
+#: ../ShareTexts.py:13
+msgid "Send this link to your supporter:"
+msgstr ""
+
 #: ../plugin.py:940
 msgid "Session Log"
 msgstr ""
@@ -311,6 +351,10 @@ msgstr ""
 
 #: ../web.py:470
 msgid "Session logs"
+msgstr ""
+
+#: ../ShareTexts.py:17
+msgid "Share"
 msgstr ""
 
 #: ../plugin.py:1300
@@ -389,6 +433,10 @@ msgstr ""
 #: ../plugin.py:1174
 #, python-format
 msgid "Terminal %d (%dx%d) - %s"
+msgstr ""
+
+#: ../ShareTexts.py:24
+msgid "The link is incomplete. Scan the QR code on the TV again."
 msgstr ""
 
 #: ../web.py:465
