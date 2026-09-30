@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RemoteSupport\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 11:59+0200\n"
+"POT-Creation-Date: 2026-09-30 15:39+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -133,11 +133,7 @@ msgstr ""
 msgid "Deny"
 msgstr ""
 
-#: ../ShareTexts.py:22
-msgid "Do not open the link yourself, you would join the session as a new user."
-msgstr ""
-
-#: ../plugin.py:817 ../ShareTexts.py:23 ../web.py:460
+#: ../plugin.py:817 ../ShareTexts.py:24 ../web.py:460
 msgid "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."
 msgstr ""
 
@@ -216,6 +212,10 @@ msgstr ""
 msgid "Here is the link to the support session of my {receiver} ({distro}):"
 msgstr ""
 
+#: ../ShareTexts.py:23
+msgid "If you open the link yourself, you join the session as a new user."
+msgstr ""
+
 #: ../plugin.py:812 ../web.py:458
 msgid "Last error:"
 msgstr ""
@@ -273,6 +273,10 @@ msgstr ""
 
 #: ../plugin.py:396
 msgid "Open a terminal first, the screenshot is shown there."
+msgstr ""
+
+#: ../ShareTexts.py:22
+msgid "Open the link"
 msgstr ""
 
 #: ../web.py:467
@@ -435,7 +439,7 @@ msgstr ""
 msgid "Terminal %d (%dx%d) - %s"
 msgstr ""
 
-#: ../ShareTexts.py:24
+#: ../ShareTexts.py:25
 msgid "The link is incomplete. Scan the QR code on the TV again."
 msgstr ""
 

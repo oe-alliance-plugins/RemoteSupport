@@ -23,6 +23,10 @@ if (/^https:\/\/\S+$/.test(url)) {
 	const message = `${intro} ${url}`;
 	const encoded = encodeURIComponent(message);
 	document.getElementById("link").textContent = url;
+	const open = document.getElementById("open");
+	open.href = url;
+	open.title = texts.openLink;
+	open.setAttribute("aria-label", texts.openLink);
 	document.getElementById("telegram").href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(intro)}`;
 	document.getElementById("whatsapp").href = `https://wa.me/?text=${encoded}`;
 	document.getElementById("sms").href = `sms:?&body=${encoded}`;

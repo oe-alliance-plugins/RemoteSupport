@@ -19,7 +19,8 @@ SHARE_TEXTS = {
 	"copy": _("Copy"),
 	"copied": _("Copied"),
 	"pasteDiscord": _("Copied, paste it in Discord"),
-	"doNotOpen": _("Do not open the link yourself, you would join the session as a new user."),
+	"openLink": _("Open the link"),
+	"openHint": _("If you open the link yourself, you join the session as a new user."),
 	"warning": _("Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."),
 	"missing": _("The link is incomplete. Scan the QR code on the TV again.")
 }

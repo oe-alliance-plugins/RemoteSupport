@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RemoteSupport\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 11:59+0200\n"
+"POT-Creation-Date: 2026-09-30 15:39+0200\n"
 "PO-Revision-Date: 2026-09-27 14:31+0200\n"
 "Last-Translator: WXbet\n"
 "Language-Team: German\n"
@@ -132,11 +132,7 @@ msgstr "Das gewählte Session-Log löschen"
 msgid "Deny"
 msgstr "Ablehnen"
 
-#: ../ShareTexts.py:22
-msgid "Do not open the link yourself, you would join the session as a new user."
-msgstr "Öffne den Link nicht selbst, sonst trittst du der Session als neuer Benutzer bei."
-
-#: ../plugin.py:817 ../ShareTexts.py:23 ../web.py:460
+#: ../plugin.py:817 ../ShareTexts.py:24 ../web.py:460
 msgid "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."
 msgstr "Poste den Link oder einen Screenshot davon nicht in öffentlichen Foren: Jeder, der den Link kennt, kann versuchen dieser Session beizutreten."
 
@@ -215,6 +211,10 @@ msgstr "Hier ist der Link zur Support-Session meines Receivers:"
 msgid "Here is the link to the support session of my {receiver} ({distro}):"
 msgstr "Hier ist der Link zur Support-Session meines {receiver} ({distro}):"
 
+#: ../ShareTexts.py:23
+msgid "If you open the link yourself, you join the session as a new user."
+msgstr "Wenn du den Link selbst öffnest, trittst du der Session als neuer Benutzer bei."
+
 #: ../plugin.py:812 ../web.py:458
 msgid "Last error:"
 msgstr "Letzter Fehler:"
@@ -273,6 +273,10 @@ msgstr "Ein neues Terminal für den Supporter öffnen"
 #: ../plugin.py:396
 msgid "Open a terminal first, the screenshot is shown there."
 msgstr "Öffne zuerst ein Terminal, der Screenshot wird dort angezeigt."
+
+#: ../ShareTexts.py:22
+msgid "Open the link"
+msgstr "Link öffnen"
 
 #: ../web.py:467
 msgid "Open the session"
@@ -434,7 +438,7 @@ msgstr "Terminal %d (%dx%d)"
 msgid "Terminal %d (%dx%d) - %s"
 msgstr "Terminal %d (%dx%d) - %s"
 
-#: ../ShareTexts.py:24
+#: ../ShareTexts.py:25
 msgid "The link is incomplete. Scan the QR code on the TV again."
 msgstr "Der Link ist unvollständig. Scanne den QR-Code auf dem Fernseher erneut."
 
