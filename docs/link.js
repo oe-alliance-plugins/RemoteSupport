@@ -6,7 +6,17 @@ function decode(text) {  // Scanners may encode the fragment.
 	}
 }
 window.addEventListener("hashchange", () => location.reload());  // A new QR code may open in the same tab.
-const parts = location.hash.slice(1).split(",");
+let fragment = location.hash.slice(1);
+try {  // Out of the address bar and the history, a reload of the tab takes it from the storage.
+	if (fragment) {
+		sessionStorage.setItem("remotesupport", fragment);
+		history.replaceState(null, "", location.pathname);
+	} else {
+		fragment = sessionStorage.getItem("remotesupport") || "";
+	}
+} catch (error) {  // Without the storage the fragment stays in the address bar.
+}
+const parts = fragment.split(",");
 const language = decode(parts[0]).toLowerCase();
 const [distro, receiver] = [decode(parts[1] || ""), decode(parts[2] || "")];
 const url = decode(parts.slice(3).join(","));

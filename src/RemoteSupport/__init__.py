@@ -6,7 +6,7 @@ from Tools.Directories import SCOPE_PLUGINS, resolveFilename
 PluginLanguageDomain = "RemoteSupport"
 PluginLanguagePath = "SystemPlugins/RemoteSupport/locale"
 
-__version__ = "1.2"
+__version__ = "1.3"
 
 
 def localeInit():
