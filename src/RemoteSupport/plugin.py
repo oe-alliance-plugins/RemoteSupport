@@ -111,6 +111,7 @@ class SshxSession:
 		self.question = ""
 		self.askedUids = set()
 		self.askedNames = []
+		self.approved = False
 		self.declinedUids = set()  # Not approved before anybody was, asked again on a new terminal.
 		self.declinedRequests = set()
 		self.declines = 0
@@ -278,6 +279,7 @@ class SshxSession:
 		self.url = None
 		self.approvalPending = False  # A late answer is ignored as the session is gone.
 		self.askedUids = set()
+		self.approved = False
 		self.declinedUids = set()
 		self.declinedRequests = set()
 		self.declines = 0
@@ -317,6 +319,9 @@ class SshxSession:
 						fd.write("".join(f"{uid}\n" for uid in sorted(approvedUids)))
 					self.logEvent(f"Access for {', '.join(name for uid, name, final in connected)} kept from before the takeover")
 		approvedUids = currentApprovals()
+		if bool(approvedUids) != self.approved:  # Dropped once nobody approved is connected.
+			self.approved = bool(approvedUids)
+			self.setState(self.state)
 		waiting = [(uid, name, final) for uid, name, final in participants() if uid not in approvedUids]
 		if waiting and not exists(LOCK_FILE):
 			fileWriteLine(LOCK_FILE, "1", source=MODULE_NAME)
@@ -324,9 +329,9 @@ class SshxSession:
 			remove(LOCK_FILE)
 		waitingUids = {uid for uid, name, final in waiting}
 		if self.approvalPending:
-			if waitingUids == self.askedUids:
+			if waitingUids == self.askedUids and sorted(name for uid, name, final in waiting) == sorted(self.askedNames):
 				return
-			withdrawQuestion(self.approvalCallback)  # Somebody joined or left meanwhile.
+			withdrawQuestion(self.approvalCallback)  # Somebody joined, left or was renamed meanwhile.
 			self.approvalPending = False
 			self.setState(self.state)
 		if not waiting or not all(final for uid, name, final in waiting):  # The browser sets the name a few seconds after joining.
@@ -1039,8 +1044,8 @@ class RemoteTerminal:
 
 	def scroll(self, up):
 		if up:
-			self.paused = True
 			self.screen.prev_page()
+			self.paused = bool(self.scrolledBack())  # Without history there is nothing to scroll back to.
 		elif self.scrolledBack():
 			self.screen.next_page()
 
@@ -1222,8 +1227,9 @@ class RemoteSupportViewer(Screen):
 	def keyUp(self):
 		large = self.largeTerminal()
 		if self.focusLarge and large:
-			self.frozen = large
 			self.terminals[large].scroll(up=True)
+			if self.terminals[large].scrolledBack():
+				self.frozen = large
 			self.render()
 		elif not self.focusLarge:
 			self.moveSelection(-1)
