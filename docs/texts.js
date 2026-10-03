@@ -30,5 +30,20 @@ const TEXTS = {
 		"title": "Remote Support",
 		"titleDistro": "Remote Support for {distro}",
 		"warning": "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."
+	},
+	"pl": {
+		"copied": "Skopiowano",
+		"copy": "Kopiuj",
+		"intro": "Oto link do sesji pomocy mojego odbiornika:",
+		"introReceiver": "Oto link do sesji pomocy mojego odbiornika {receiver} ({distro}):",
+		"missing": "Link jest niekompletny. Zeskanuj ponownie kod QR z telewizora.",
+		"openHint": "Jeśli sam otworzysz link, dołączysz do sesji jako nowy użytkownik.",
+		"openLink": "Otwórz link",
+		"pasteDiscord": "Skopiowano, wklej w Discordzie",
+		"send": "Wyślij ten link osobie pomagającej:",
+		"share": "Udostępnij",
+		"title": "Zdalna pomoc",
+		"titleDistro": "Zdalna pomoc dla {distro}",
+		"warning": "Nie publikuj linku ani jego zrzutu ekranu na publicznych forach: każdy, kto go ma, może spróbować dołączyć i widzi terminale, dopóki nie odmówisz dostępu."
 	}
 };
