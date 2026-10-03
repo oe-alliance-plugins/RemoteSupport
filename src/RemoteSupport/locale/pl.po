@@ -1,0 +1,525 @@
+# Polish translation for RemoteSupport.
+# This file is distributed under the same license as the RemoteSupport package.
+# StreamF, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: RemoteSupport\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-30 15:39+0200\n"
+"PO-Revision-Date: 2026-10-03 09:59+0100\n"
+"Last-Translator: StreamF\n"
+"Language-Team: Polish\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Poedit 3.9\n"
+
+#: ../plugin.py:910
+#, python-format
+msgid "%d screenshot"
+msgid_plural "%d screenshots"
+msgstr[0] "%d zrzut ekranu"
+msgstr[1] "%d zrzuty ekranu"
+msgstr[2] "%d zrzutów ekranu"
+
+#: ../plugin.py:778
+#, python-format
+msgid "%d terminal open"
+msgid_plural "%d terminals open"
+msgstr[0] "%d otwarty terminal"
+msgstr[1] "%d otwarte terminale"
+msgstr[2] "%d otwartych terminali"
+
+#: ../plugin.py:775
+#, python-format
+msgid "%d user connected"
+msgid_plural "%d users connected"
+msgstr[0] "%d połączony użytkownik"
+msgstr[1] "%d połączonych użytkowników"
+msgstr[2] "%d połączonych użytkowników"
+
+#: ../plugin.py:340
+#, python-format
+msgid "'%s' joined the support session."
+msgstr "'%s' dołączył do sesji pomocy."
+
+#: ../plugin.py:787 ../web.py:457
+msgid "A package the plugin needs is missing (sshx or a Python module). Please reinstall the Remote Support plugin."
+msgstr "Brakuje pakietu wymaganego przez wtyczkę (sshx lub moduł Pythona). Zainstaluj ponownie wtyczkę Zdalna pomoc."
+
+#: ../plugin.py:829 ../web.py:488
+msgid "After you approved the access on the TV, the supporter has full root access to your receiver as long as the session is running. Only share the link with people you trust!"
+msgstr "Po zatwierdzeniu dostępu na telewizorze osoba pomagająca ma pełny dostęp root do odbiornika, dopóki trwa sesja. Udostępniaj link tylko osobom, którym ufasz!"
+
+#: ../web.py:454
+msgid "Allow"
+msgstr "Zezwól"
+
+#: ../plugin.py:796
+msgid "Approved users can open terminals. Everybody who joins later has to be approved as well."
+msgstr "Zatwierdzeni użytkownicy mogą otwierać terminale. Każdy, kto dołączy później, również musi zostać zatwierdzony."
+
+#: ../plugin.py:1187
+msgid "Automatic"
+msgstr "Automatycznie"
+
+#: ../plugin.py:739 ../plugin.py:1091
+msgid "Close"
+msgstr "Zamknij"
+
+#: ../plugin.py:1185
+msgid "Close Terminal"
+msgstr "Zamknij terminal"
+
+#: ../plugin.py:883
+msgid "Close and exit all menus"
+msgstr "Zamknij i wyjdź ze wszystkich menu"
+
+#: ../plugin.py:1106
+msgid "Close the large terminal"
+msgstr "Zamknij powiększony terminal"
+
+#: ../plugin.py:882
+msgid "Close the session logs"
+msgstr "Zamknij logi sesji"
+
+#: ../plugin.py:731 ../plugin.py:1085
+msgid "Close, the session continues"
+msgstr "Zamknij, sesja trwa dalej"
+
+#: ../web.py:461
+msgid "Connected"
+msgstr "Połączeni"
+
+#: ../plugin.py:1183
+#, python-format
+msgid "Connected: %s"
+msgstr "Połączeni: %s"
+
+#: ../plugin.py:791
+msgid "Connecting to the sshx server, please wait."
+msgstr "Łączenie z serwerem sshx, proszę czekać."
+
+#: ../ShareTexts.py:20
+msgid "Copied"
+msgstr "Skopiowano"
+
+#: ../ShareTexts.py:21
+msgid "Copied, paste it in Discord"
+msgstr "Skopiowano, wklej w Discordzie"
+
+#: ../ShareTexts.py:19
+msgid "Copy"
+msgstr "Kopiuj"
+
+#: ../plugin.py:926 ../web.py:481
+msgid "Delete"
+msgstr "Usuń"
+
+#: ../plugin.py:928 ../web.py:482
+msgid "Delete All"
+msgstr "Usuń wszystkie"
+
+#: ../plugin.py:893
+msgid "Delete all finished session logs"
+msgstr "Usuń wszystkie logi zakończonych sesji"
+
+#: ../plugin.py:890
+msgid "Delete the selected session log"
+msgstr "Usuń wybrany log sesji"
+
+#: ../web.py:455
+msgid "Deny"
+msgstr "Odmów"
+
+#: ../plugin.py:817 ../ShareTexts.py:24 ../web.py:460
+msgid "Do not post the link or a screenshot of it in public forums: everybody who has it can try to join and sees the terminals until you deny the access."
+msgstr "Nie publikuj linku ani jego zrzutu ekranu na publicznych forach: każdy, kto go ma, może spróbować dołączyć i widzi terminale, dopóki nie odmówisz dostępu."
+
+#: ../plugin.py:965
+#, python-format
+msgid "Do you really want to delete all %d session logs?"
+msgstr "Czy na pewno usunąć wszystkie logi sesji (%d)?"
+
+#: ../web.py:486
+msgid "Do you really want to delete all session logs and their screenshots? The log of a running session is kept."
+msgstr "Czy na pewno usunąć wszystkie logi sesji i ich zrzuty ekranu? Log trwającej sesji zostanie zachowany."
+
+#: ../plugin.py:957 ../web.py:485
+#, python-format
+msgid "Do you really want to delete the session log '%s' and its %d screenshots?"
+msgstr "Czy na pewno usunąć log sesji '%s' i jego zrzuty ekranu (%d)?"
+
+#: ../plugin.py:955 ../web.py:484
+#, python-format
+msgid "Do you really want to delete the session log '%s' and its screenshot?"
+msgstr "Czy na pewno usunąć log sesji '%s' i jego zrzut ekranu?"
+
+#: ../plugin.py:959 ../web.py:483
+#, python-format
+msgid "Do you really want to delete the session log '%s'?"
+msgstr "Czy na pewno usunąć log sesji '%s'?"
+
+#: ../plugin.py:831 ../web.py:490
+msgid "Do you really want to end the support session?"
+msgstr "Czy na pewno zakończyć sesję pomocy?"
+
+#: ../plugin.py:346
+msgid "Do you want to allow the access? Then the supporter can open terminals on this receiver."
+msgstr "Czy zezwolić na dostęp? Osoba pomagająca będzie mogła wtedy otwierać terminale na tym odbiorniku."
+
+#: ../plugin.py:1269
+#, python-format
+msgid "Do you want to close terminal %d? The supporter loses it together with everything running in it."
+msgstr "Zamknąć terminal %d? Osoba pomagająca straci go razem ze wszystkim, co w nim działa."
+
+#: ../plugin.py:833 ../web.py:489
+msgid "Do you want to start a support session?"
+msgstr "Czy rozpocząć sesję pomocy?"
+
+#: ../web.py:472
+msgid "Download"
+msgstr "Pobierz"
+
+#: ../ShareTexts.py:18
+msgid "E-mail"
+msgstr "E-mail"
+
+#: ../plugin.py:745
+msgid "Exit all menus, the session continues"
+msgstr "Wyjdź ze wszystkich menu, sesja trwa dalej"
+
+#: ../web.py:476
+msgid "Full window"
+msgstr "Pełne okno"
+
+#: ../web.py:478
+msgid "Grab ALL"
+msgstr "Zrzut CAŁOŚCI"
+
+#: ../web.py:479
+msgid "Grab OSD"
+msgstr "Zrzut OSD"
+
+#: ../ShareTexts.py:14
+msgid "Here is the link to the support session of my receiver:"
+msgstr "Oto link do sesji pomocy mojego odbiornika:"
+
+#. TRANSLATORS: Keep {receiver} and {distro}, they are replaced by the receiver and its distribution, e.g. pulse4kmini and OpenATV.
+#: ../ShareTexts.py:16
+#, python-brace-format
+msgid "Here is the link to the support session of my {receiver} ({distro}):"
+msgstr "Oto link do sesji pomocy mojego odbiornika {receiver} ({distro}):"
+
+#: ../ShareTexts.py:23
+msgid "If you open the link yourself, you join the session as a new user."
+msgstr "Jeśli sam otworzysz link, dołączysz do sesji jako nowy użytkownik."
+
+#: ../plugin.py:812 ../web.py:458
+msgid "Last error:"
+msgstr "Ostatni błąd:"
+
+#: ../web.py:459
+msgid "Link for your supporter"
+msgstr "Link dla osoby pomagającej"
+
+#: ../plugin.py:1103
+msgid "Move back to the terminal list"
+msgstr "Wróć do listy terminali"
+
+#: ../plugin.py:1190
+msgid "New Terminal"
+msgstr "Nowy terminal"
+
+#: ../plugin.py:342
+#, python-format
+msgid "New in the support session: %s"
+msgstr "Nowy w sesji pomocy: %s"
+
+#: ../plugin.py:1101
+msgid "Next terminal / scroll forward"
+msgstr "Następny terminal / przewiń do przodu"
+
+#: ../web.py:471
+msgid "No session logs"
+msgstr "Brak logów sesji"
+
+#: ../plugin.py:809 ../web.py:444 ../web.py:445
+msgid "No support session active"
+msgstr "Brak aktywnej sesji pomocy"
+
+#: ../web.py:462
+msgid "Nobody"
+msgstr "Nikt"
+
+#: ../plugin.py:420
+#, python-format
+msgid "Nobody used the remote support session for %d minutes. Do you want to end it?"
+msgstr "Nikt nie korzystał z sesji zdalnej pomocy przez %d min. Czy ją zakończyć?"
+
+#: ../web.py:463
+#, python-format
+msgid "Nobody uses the session, it ends in %d minutes."
+msgstr "Nikt nie korzysta z sesji, zakończy się za %d min."
+
+#: ../web.py:477
+msgid "Normal size"
+msgstr "Normalny rozmiar"
+
+#: ../plugin.py:1112
+msgid "Open a new terminal for the supporter"
+msgstr "Otwórz nowy terminal dla osoby pomagającej"
+
+#: ../plugin.py:396
+msgid "Open a terminal first, the screenshot is shown there."
+msgstr "Najpierw otwórz terminal, zrzut ekranu zostanie w nim pokazany."
+
+#: ../ShareTexts.py:22
+msgid "Open the link"
+msgstr "Otwórz link"
+
+#: ../web.py:467
+msgid "Open the session"
+msgstr "Otwórz sesję"
+
+#: ../web.py:469
+msgid "Open the session in its own tab, the new user has to be approved as well."
+msgstr "Otwórz sesję w osobnej karcie, nowy użytkownik również musi zostać zatwierdzony."
+
+#: ../plugin.py:810
+msgid "Press GREEN to start a support session. You will get a link and a QR code for your supporter, who then gets a terminal on this receiver in their web browser."
+msgstr "Naciśnij ZIELONY, aby rozpocząć sesję pomocy. Otrzymasz link i kod QR dla osoby pomagającej, która dostanie wtedy terminal tego odbiornika w swojej przeglądarce internetowej."
+
+#: ../plugin.py:1100
+msgid "Previous terminal / scroll back"
+msgstr "Poprzedni terminal / przewiń wstecz"
+
+#: ../plugin.py:544 ../ShareTexts.py:10 ../web.py:442
+msgid "Remote Support"
+msgstr "Zdalna pomoc"
+
+#: ../plugin.py:730
+msgid "Remote Support Actions"
+msgstr "Akcje zdalnej pomocy"
+
+#. TRANSLATORS: Keep {distro}, it is replaced by the distribution of the receiver, e.g. OpenATV.
+#: ../ShareTexts.py:12
+#, python-brace-format
+msgid "Remote Support for {distro}"
+msgstr "Zdalna pomoc dla {distro}"
+
+#: ../plugin.py:786 ../web.py:451
+msgid "Remote support is not available"
+msgstr "Zdalna pomoc jest niedostępna"
+
+#: ../plugin.py:802
+msgid "Scan the QR code with your phone and send the link to your supporter from there."
+msgstr "Zeskanuj kod QR telefonem i wyślij z niego link osobie pomagającej."
+
+#: ../plugin.py:818
+msgid "Scan with your phone to send the link to your supporter"
+msgstr "Zeskanuj telefonem, aby wysłać link osobie pomagającej"
+
+#: ../web.py:475
+msgid "Screenshot"
+msgstr "Zrzut ekranu"
+
+#: ../plugin.py:931
+msgid "Screenshots"
+msgstr "Zrzuty ekranu"
+
+#: ../plugin.py:1102
+msgid "Scroll in the large terminal"
+msgstr "Przewijaj w powiększonym terminalu"
+
+#: ../ShareTexts.py:13
+msgid "Send this link to your supporter:"
+msgstr "Wyślij ten link osobie pomagającej:"
+
+#: ../plugin.py:940
+msgid "Session Log"
+msgstr "Log sesji"
+
+#: ../plugin.py:875
+msgid "Session Log Actions"
+msgstr "Akcje logu sesji"
+
+#: ../plugin.py:742 ../plugin.py:874
+msgid "Session Logs"
+msgstr "Logi sesji"
+
+#: ../web.py:474
+msgid "Session log"
+msgstr "Log sesji"
+
+#: ../web.py:470
+msgid "Session logs"
+msgstr "Logi sesji"
+
+#: ../ShareTexts.py:17
+msgid "Share"
+msgstr "Udostępnij"
+
+#: ../plugin.py:1300
+msgid "Share a remote terminal session with a supporter."
+msgstr "Udostępnij sesję zdalnego terminala osobie pomagającej."
+
+#: ../plugin.py:924 ../web.py:473
+msgid "Show"
+msgstr "Pokaż"
+
+#: ../plugin.py:747
+msgid "Show the logs of previous support sessions"
+msgstr "Pokaż logi poprzednich sesji pomocy"
+
+#: ../plugin.py:1109
+msgid "Show the most active terminal large"
+msgstr "Pokaż najbardziej aktywny terminal w powiększeniu"
+
+#: ../plugin.py:896
+msgid "Show the screenshots of the session"
+msgstr "Pokaż zrzuty ekranu z sesji"
+
+#: ../plugin.py:886 ../plugin.py:887
+msgid "Show the selected session log"
+msgstr "Pokaż wybrany log sesji"
+
+#: ../plugin.py:1099
+msgid "Show the terminal large / back"
+msgstr "Powiększ terminal / wróć"
+
+#: ../plugin.py:813 ../web.py:452
+msgid "Start"
+msgstr "Rozpocznij"
+
+#: ../web.py:456
+msgid "Start a support session to get a link for your supporter, who then gets a terminal on this receiver in their web browser. The session is the same as in the Remote Support screen on the TV, you can watch and use it here."
+msgstr "Rozpocznij sesję pomocy, aby otrzymać link dla osoby pomagającej, która dostanie wtedy terminal tego odbiornika w swojej przeglądarce internetowej. To ta sama sesja co na ekranie Zdalnej pomocy w telewizorze, możesz ją tutaj oglądać i z niej korzystać."
+
+#: ../plugin.py:750 ../plugin.py:751
+msgid "Start or stop the support session"
+msgstr "Rozpocznij lub zatrzymaj sesję pomocy"
+
+#: ../plugin.py:790 ../web.py:446
+msgid "Starting support session..."
+msgstr "Uruchamianie sesji pomocy..."
+
+#: ../plugin.py:792 ../plugin.py:803 ../web.py:453
+msgid "Stop"
+msgstr "Zatrzymaj"
+
+#: ../plugin.py:805 ../web.py:448
+msgid "Stopping support session..."
+msgstr "Zatrzymywanie sesji pomocy..."
+
+#: ../plugin.py:1083
+msgid "Support Session"
+msgstr "Sesja pomocy"
+
+#: ../plugin.py:1084
+msgid "Support Session Actions"
+msgstr "Akcje sesji pomocy"
+
+#: ../plugin.py:798 ../web.py:447
+msgid "Support session is running"
+msgstr "Sesja pomocy jest aktywna"
+
+#: ../plugin.py:795
+msgid "Support session is running, access approved"
+msgstr "Sesja pomocy jest aktywna, dostęp zatwierdzony"
+
+#: ../plugin.py:1179
+#, python-format
+msgid "Terminal %d (%dx%d)"
+msgstr "Terminal %d (%dx%d)"
+
+#: ../plugin.py:1174
+#, python-format
+msgid "Terminal %d (%dx%d) - %s"
+msgstr "Terminal %d (%dx%d) - %s"
+
+#: ../ShareTexts.py:25
+msgid "The link is incomplete. Scan the QR code on the TV again."
+msgstr "Link jest niekompletny. Zeskanuj ponownie kod QR z telewizora."
+
+#: ../web.py:465
+msgid "The receiver does not answer."
+msgstr "Odbiornik nie odpowiada."
+
+#: ../web.py:480
+msgid "The screenshot is shown in the terminal used last."
+msgstr "Zrzut ekranu jest pokazywany w ostatnio używanym terminalu."
+
+#: ../web.py:466
+msgid "The session can only be shown here when OpenWebif is opened with HTTPS."
+msgstr "Sesję można tu wyświetlić tylko wtedy, gdy OpenWebif jest otwarty przez HTTPS."
+
+#: ../plugin.py:800
+msgid "The session keeps running when you close this screen. Press YELLOW to watch what the supporter is doing and GREEN to end the session."
+msgstr "Sesja trwa dalej po zamknięciu tego ekranu. Naciśnij ŻÓŁTY, aby obserwować, co robi osoba pomagająca, i ZIELONY, aby zakończyć sesję."
+
+#: ../plugin.py:391
+msgid "The supporter took a screenshot."
+msgstr "Osoba pomagająca zrobiła zrzut ekranu."
+
+#: ../web.py:468
+msgid "The terminal stays blank?"
+msgstr "Terminal pozostaje pusty?"
+
+#: ../plugin.py:969
+#, python-format
+msgid "Their %d screenshots are deleted as well."
+msgstr "Ich zrzuty ekranu (%d) również zostaną usunięte."
+
+#: ../plugin.py:967
+msgid "Their screenshot is deleted as well."
+msgstr "Ich zrzut ekranu również zostanie usunięty."
+
+#: ../plugin.py:344
+msgid "Until you answer, nobody can type in the terminals. Do you want to allow the access? If not, the session is ended for everybody."
+msgstr "Dopóki nie odpowiesz, nikt nie może pisać w terminalach. Czy zezwolić na dostęp? Jeśli nie, sesja zostanie zakończona dla wszystkich."
+
+#: ../plugin.py:1166
+msgid "Waiting for the supporter to open a terminal..."
+msgstr "Oczekiwanie, aż osoba pomagająca otworzy terminal..."
+
+#: ../plugin.py:822
+msgid "Watch Session"
+msgstr "Obserwuj sesję"
+
+#: ../plugin.py:754
+msgid "Watch the support session on the TV"
+msgstr "Obserwuj sesję pomocy na telewizorze"
+
+#: ../plugin.py:801
+#, python-format
+msgid "When nobody uses it for %d minutes, you are asked whether to end it."
+msgstr "Jeśli nikt nie korzysta z niej przez %d min, pojawi się pytanie, czy ją zakończyć."
+
+#: ../plugin.py:799
+msgid "When somebody joins the session, you have to approve the access with the remote control or in OpenWebif."
+msgstr "Gdy ktoś dołączy do sesji, musisz zatwierdzić dostęp pilotem lub w OpenWebif."
+
+#: ../web.py:450
+msgid "access approved"
+msgstr "dostęp zatwierdzony"
+
+#: ../plugin.py:1170
+msgid "automatic"
+msgstr "automatycznie"
+
+#: ../plugin.py:1170
+msgid "pinned"
+msgstr "przypięty"
+
+#: ../plugin.py:911 ../web.py:487
+msgid "running"
+msgstr "trwa"
+
+#: ../plugin.py:1173
+#, python-format
+msgid "scrolled back %d lines"
+msgstr "przewinięto wstecz: %d"
