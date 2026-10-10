@@ -2,8 +2,9 @@
 
 from json import dumps
 from os.path import basename
-
 from twisted.web import resource
+
+from enigma import eQRCode
 
 from . import _
 from .plugin import IDLE_WARNING, SshxSession, deleteSessionLogs, incomplete, participants, sessionGrabs, sessionLogs, sshxSession
@@ -429,12 +430,8 @@ class RemoteSupportWeb(resource.Resource):
 
 	def qrCode(self, url):
 		if url and url != self.qrUrl:
-			from qrcode import QRCode, constants  # Not at module level as the package may be missing.
-			qrCode = QRCode(error_correction=constants.ERROR_CORRECT_M, border=0)
-			qrCode.add_data(url)
-			qrCode.make(fit=True)
 			self.qrUrl = url
-			self.qrMatrix = ["".join("1" if module else "0" for module in row) for row in qrCode.get_matrix()]
+			self.qrMatrix = eQRCode.getModules(url, eQRCode.ecMedium).split("\n")
 		return self.qrMatrix if url else []
 
 	def texts(self):

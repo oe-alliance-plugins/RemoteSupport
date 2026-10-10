@@ -669,17 +669,6 @@ def shareUrl(link):  # The page to send the link from the phone. The link is in 
 	return f"{SHARE_PAGE}#{enigmaLanguage()},{distro},{receiver},{link}"
 
 
-def printQrCode(text):
-	try:
-		from qrcode import QRCode, constants  # Not at module level as the package may be missing.
-		qrCode = QRCode(error_correction=constants.ERROR_CORRECT_L, border=1)  # Small for the terminal, a screen needs no more error correction.
-		qrCode.add_data(text)
-		qrCode.make(fit=True)
-		qrCode.print_ascii(out=stdout, invert=True)
-	except ImportError:
-		pass
-
-
 def watcherModules():
 	try:
 		return all(find_spec(module) for module in WATCHER_MODULES)
@@ -796,10 +785,10 @@ class RemoteSupportConsole:  # remotesupport: a session without enigma2, e.g. wh
 		self.sessionLog = readFile(LOG_PATH_FILE)
 		link = readFile(LINK_FILE)
 		share = shareUrl(link)
-		print(f"\nSend this link to your supporter or scan the QR code with your phone and send it from there:\n\n{link}\n")
-		printQrCode(share)
-		print(f"QR: {share}")  # Tools that start remotesupport show the QR code of this line.
-		print("\nDo not post the link or a screenshot of it in public forums: everybody who has it can try to join.\n")
+		print(f"\nSend this link to your supporter:\n\n{link}\n")
+		if not stdout.isatty() or environ.get("TERM") == "dumb":
+			print(f"QR: {share}\n")  # Tools that start remotesupport show the QR code of this line.
+		print("Do not post the link or a screenshot of it in public forums: everybody who has it can try to join.\n")
 		if enigmaRunning():
 			print("enigma2 manages the session, the access is approved on the TV. 'remotesupport stop' ends it.")
 			return 0

@@ -12,7 +12,7 @@ from signal import SIGHUP, SIGINT, SIGTERM
 from socket import AF_UNIX, SOCK_DGRAM, gethostname, socket
 from time import strftime, strptime, time
 
-from enigma import RT_HALIGN_LEFT, RT_VALIGN_CENTER, RT_VALIGN_TOP, eCanvas, eListbox, eListboxPythonMultiContent, eRect, eSocketNotifier, eTimer, gFont, gRGB, getDesktop
+from enigma import RT_HALIGN_LEFT, RT_VALIGN_CENTER, RT_VALIGN_TOP, eListbox, eListboxPythonMultiContent, eSocketNotifier, eTimer, gFont, getDesktop
 
 from Components.ActionMap import HelpableActionMap
 from Components.config import config
@@ -22,6 +22,7 @@ from Components.Label import Label
 from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryRectangle, MultiContentEntryText
 from Components.Pixmap import MultiPixmap
+from Components.QRCode import QRCode
 from Components.Sources.StaticText import StaticText
 from Components.SystemInfo import BoxInfo
 from Plugins.Plugin import PluginDescriptor
@@ -40,7 +41,7 @@ from .RemoteSupport import ACTIVITY_FILE, APPROVED_FILE, CHAT_FILE, CREATE_FILE,
 
 MODULE_NAME = "RemoteSupport"
 
-REQUIRED_MODULES = ("websocket", "cbor2", "cryptography.hazmat.primitives.kdf.argon2", "qrcode", "pyte")
+REQUIRED_MODULES = ("websocket", "cbor2", "cryptography.hazmat.primitives.kdf.argon2", "pyte")
 USERS = (" Users: ", " Participants: ")  # The latter in logs of older versions.
 APPROVAL_QUESTION_TIMEOUT = 30
 HANDOVER_APPROVAL_WINDOW = 30  # Who is connected this long after taking over a session with approved terminals keeps the access.
@@ -561,54 +562,6 @@ def sessionStart(reason, session=None, **kwargs):
 		addExternalChild(("remotesupport", RemoteSupportWeb(), title(), "1", True, "_self"))  # Shown in the content area.
 
 
-class QRCodeWidget(GUIComponent):
-	GUI_WIDGET = eCanvas
-
-	def __init__(self):
-		GUIComponent.__init__(self)
-		self.text = None
-
-	def postWidgetCreate(self, instance):
-		self.hide()
-
-	def setText(self, text):
-		if text != self.text:
-			self.text = text
-			self.draw()
-
-	def draw(self):
-		if self.instance is None:
-			return
-		if not self.text:
-			self.hide()
-			return
-		from qrcode import QRCode, constants  # Not at module level as the package may be missing.
-		qrCode = QRCode(error_correction=constants.ERROR_CORRECT_M, border=0)
-		qrCode.add_data(self.text)
-		qrCode.make(fit=True)
-		matrix = qrCode.get_matrix()
-		size = self.instance.size()
-		self.instance.setSize(size)  # Allocates the canvas pixmap.
-		width, height = size.width(), size.height()
-		modules = len(matrix) + 8  # Quiet zone of 4 modules on each side.
-		scale = min(width, height) // modules
-		offsetX = (width - scale * len(matrix)) // 2
-		offsetY = (height - scale * len(matrix)) // 2
-		self.instance.fillRect(eRect(0, 0, width, height), gRGB(0x00FFFFFF))
-		black = gRGB(0x00000000)
-		for y, row in enumerate(matrix):
-			x = 0
-			while x < len(row):
-				if row[x]:
-					start = x
-					while x < len(row) and row[x]:
-						x += 1
-					self.instance.fillRect(eRect(offsetX + start * scale, offsetY + y * scale, (x - start) * scale, scale), black)
-				else:
-					x += 1
-		self.show()
-
-
 def consoleFontSize(width, height, columns, lines):  # The largest monospaced font that fits the terminal into the area.
 	return max(4, min(int(height / lines / LINE_HEIGHT_RATIO), int(width / columns / FONT_WIDTH_RATIO)))
 
@@ -739,7 +692,7 @@ class RemoteSupportManager(Screen):
 		self["counts"] = Label()
 		self["url"] = Label()
 		self["linkwarning"] = Label()
-		self["qrcode"] = QRCodeWidget()
+		self["qrcode"] = QRCode()
 		self["qrhint"] = Label()
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText()
